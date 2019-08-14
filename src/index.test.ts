@@ -100,3 +100,72 @@ test('will recalculate if a value changes when there are no listeners', () => {
   expect(calculation.get()).toEqual(4);
   expect(calculate).toHaveBeenCalledTimes(3);
 });
+
+test('skips updates for integer values that are the same', () => {
+  const value = new Value(1);
+  const calculate = jest.fn(() => value.get());
+  const calculation = new Calculation(calculate);
+
+  expect(calculate).toHaveBeenCalledTimes(0);
+  expect(calculation.get()).toEqual(1);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  value.set(2);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  expect(calculation.get()).toEqual(2);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  value.set(2);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  expect(calculation.get()).toEqual(2);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  value.set(3);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  expect(calculation.get()).toEqual(3);
+  expect(calculate).toHaveBeenCalledTimes(3);
+});
+
+test('skips updates for objects values that are the same', () => {
+  const object1 = {};
+  const object2 = {};
+  const object3 = {};
+  const value = new Value(object1);
+  const calculate = jest.fn(() => value.get());
+  const calculation = new Calculation(calculate);
+
+  expect(calculate).toHaveBeenCalledTimes(0);
+  expect(calculation.get()).toBe(object1);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  value.set(object2);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  expect(calculation.get()).toBe(object2);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  value.set(object2);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  expect(calculation.get()).toBe(object2);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  value.set(object3);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  expect(calculation.get()).toBe(object3);
+  expect(calculate).toHaveBeenCalledTimes(3);
+});
+
+test('skips updates for NaN values that are the same', () => {
+  const value = new Value(1);
+  const calculate = jest.fn(() => value.get());
+  const calculation = new Calculation(calculate);
+
+  expect(calculate).toHaveBeenCalledTimes(0);
+  expect(calculation.get()).toEqual(1);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  value.set(NaN);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  expect(calculation.get()).toEqual(NaN);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  value.set(NaN);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  expect(calculation.get()).toEqual(NaN);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  value.set(3);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  expect(calculation.get()).toEqual(3);
+  expect(calculate).toHaveBeenCalledTimes(3);
+});

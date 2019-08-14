@@ -29,8 +29,10 @@ export class Value<T> implements Dependency {
 
   set(value: T): void {
     // TODO: Schedule this for later?
-    this._version++;
-    this._value = value;
+    if (!objectIs(value, this._value)) {
+      this._version++;
+      this._value = value;
+    }
   }
 }
 
@@ -91,5 +93,19 @@ export class Calculation<T> {
     } else {
       throw this._value;
     }
+  }
+}
+
+/**
+ * Implementation of [Object.is][1] so that consumers don’t have to ship
+ * a polyfill.
+ *
+ * [1]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
+ */
+function objectIs(x: unknown, y: unknown) {
+  if (x === y) {
+    return x !== 0 || 1 / (x as any) === 1 / (y as any);
+  } else {
+    return x !== x && y !== y;
   }
 }
