@@ -75,3 +75,28 @@ test('will run a calculation lazily', () => {
   expect(calculation.get()).toEqual(42);
   expect(calculate).toHaveBeenCalledTimes(1);
 });
+
+test('will recalculate if a value changes when there are no listeners', () => {
+  const value1 = new Value(1);
+  const value2 = new Value(1);
+  const calculate = jest.fn(() => value1.get() + value2.get());
+  const calculation = new Calculation(calculate);
+
+  expect(calculate).toHaveBeenCalledTimes(0);
+  expect(calculation.get()).toEqual(2);
+  expect(calculation.get()).toEqual(2);
+  expect(calculation.get()).toEqual(2);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  value1.set(2);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  expect(calculation.get()).toEqual(3);
+  expect(calculation.get()).toEqual(3);
+  expect(calculation.get()).toEqual(3);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  value2.set(2);
+  expect(calculate).toHaveBeenCalledTimes(2);
+  expect(calculation.get()).toEqual(4);
+  expect(calculation.get()).toEqual(4);
+  expect(calculation.get()).toEqual(4);
+  expect(calculate).toHaveBeenCalledTimes(3);
+});
