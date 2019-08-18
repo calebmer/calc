@@ -215,7 +215,7 @@ test('will update when a sub-calculation changes', () => {
   expect(calculate2).toHaveBeenCalledTimes(2);
 });
 
-test('skips update for calculations that are the same', () => {
+test('does not skip updates for calculations that are the same when the root is recalculated', () => {
   const value1 = new Value(1);
   const value2 = new Value(2);
   const calculate1 = jest.fn(() => value1.get() + value2.get());
@@ -234,10 +234,10 @@ test('skips update for calculations that are the same', () => {
   expect(calculate2).toHaveBeenCalledTimes(1);
   expect(tx(() => calculation2.get())).toEqual(3);
   expect(calculate1).toHaveBeenCalledTimes(2);
-  expect(calculate2).toHaveBeenCalledTimes(1);
+  expect(calculate2).toHaveBeenCalledTimes(2);
 });
 
-test('skips update for calculations that throw and are the same', () => {
+test('does not skips update for calculations that throw and are the same when the root is recalculated', () => {
   const value1 = new Value(1);
   const value2 = new Value(2);
   const calculate1 = jest.fn(() => {
@@ -263,6 +263,61 @@ test('skips update for calculations that throw and are the same', () => {
   value2.set(1);
   expect(calculate1).toHaveBeenCalledTimes(1);
   expect(calculate2).toHaveBeenCalledTimes(1);
+  expect(tx(() => calculation2.get())).toEqual(3);
+  expect(calculate1).toHaveBeenCalledTimes(2);
+  expect(calculate2).toHaveBeenCalledTimes(2);
+});
+
+test('skips update for calculations that are the same when the sub-calculation is recalculated first', () => {
+  const value1 = new Value(1);
+  const value2 = new Value(2);
+  const calculate1 = jest.fn(() => value1.get() + value2.get());
+  const calculation1 = new Calculation(calculate1);
+  const calculate2 = jest.fn(() => calculation1.get());
+  const calculation2 = new Calculation(calculate2);
+
+  expect(calculate1).toHaveBeenCalledTimes(0);
+  expect(calculate2).toHaveBeenCalledTimes(0);
+  expect(tx(() => calculation2.get())).toEqual(3);
+  expect(calculate1).toHaveBeenCalledTimes(1);
+  expect(calculate2).toHaveBeenCalledTimes(1);
+  value1.set(2);
+  value2.set(1);
+  expect(calculate1).toHaveBeenCalledTimes(1);
+  expect(calculate2).toHaveBeenCalledTimes(1);
+  expect(tx(() => calculation1.get())).toEqual(3);
+  expect(tx(() => calculation2.get())).toEqual(3);
+  expect(calculate1).toHaveBeenCalledTimes(2);
+  expect(calculate2).toHaveBeenCalledTimes(1);
+});
+
+test('skips update for calculations that throw and are the same when the sub-calculation is recalculated first', () => {
+  const value1 = new Value(1);
+  const value2 = new Value(2);
+  const calculate1 = jest.fn(() => {
+    throw value1.get() + value2.get();
+  });
+  const calculation1 = new Calculation(calculate1);
+  const calculate2 = jest.fn(() => {
+    try {
+      calculation1.get();
+      throw new Error('Expected an error to be thrown!');
+    } catch (error) {
+      return error;
+    }
+  });
+  const calculation2 = new Calculation(calculate2);
+
+  expect(calculate1).toHaveBeenCalledTimes(0);
+  expect(calculate2).toHaveBeenCalledTimes(0);
+  expect(tx(() => calculation2.get())).toEqual(3);
+  expect(calculate1).toHaveBeenCalledTimes(1);
+  expect(calculate2).toHaveBeenCalledTimes(1);
+  value1.set(2);
+  value2.set(1);
+  expect(calculate1).toHaveBeenCalledTimes(1);
+  expect(calculate2).toHaveBeenCalledTimes(1);
+  expect(() => tx(() => calculation1.get())).toThrow();
   expect(tx(() => calculation2.get())).toEqual(3);
   expect(calculate1).toHaveBeenCalledTimes(2);
   expect(calculate2).toHaveBeenCalledTimes(1);

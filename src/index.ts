@@ -1,19 +1,28 @@
-interface Dependency {
-  _version: number;
-}
+type DependencySet = Map<
+  Value<unknown> | Calculation<unknown>,
+  ValueVersion | null
+>;
 
-type DependencySet = Map<Dependency, number>;
+type DependencySetEntry =
+  | [Value<unknown>, ValueVersion]
+  | [Calculation<unknown>, null];
+
+type TransactionID = number;
 
 type Transaction = {
-  dependencyTracker: DependencySet | null;
+  id: TransactionID;
+  dependencies: DependencySet | null;
 };
+
+let nextTransactionID = 0;
 
 let currentTransaction: Transaction | null = null;
 
 export function withTransaction<T>(action: () => T): T {
   let lastTransaction = currentTransaction;
   currentTransaction = {
-    dependencyTracker: null,
+    id: nextTransactionID++,
+    dependencies: null,
   };
   try {
     return action();
@@ -36,27 +45,21 @@ function getTransaction(): Transaction {
   return currentTransaction;
 }
 
-function trackDependency(
-  transaction: Transaction,
-  dependency: Dependency,
-): void {
-  const {dependencyTracker} = transaction;
-  if (dependencyTracker !== null) {
-    dependencyTracker.set(dependency, dependency._version);
-  }
-}
+type ValueVersion = number;
 
-export class Value<T> implements Dependency {
-  _version = 0;
+export class Value<T> {
+  _version: ValueVersion;
   _value: T;
 
   constructor(value: T) {
+    this._version = 0;
     this._value = value;
   }
 
   get(): T {
-    const transaction = getTransaction();
-    trackDependency(transaction, this);
+    const {dependencies} = getTransaction();
+    if (dependencies !== null) dependencies.set(this, this._version);
+
     return this._value;
   }
 
@@ -71,79 +74,90 @@ export class Value<T> implements Dependency {
   }
 }
 
-const enum CalculationState {
-  Empty = 0,
-  Normal = 1,
-  Abrupt = 2,
+const enum CalculationReturn {
+  Normal = 0,
+  Abrupt = 1,
 }
 
-export class Calculation<T> implements Dependency {
-  _version = 0;
-  _state = CalculationState.Empty;
-  _value: unknown = null;
-  _dependencies: DependencySet | null = null;
+export class Calculation<T> {
+  _valid: TransactionID | false;
+  _return: CalculationReturn;
+  _value: unknown;
+  _dependencies: DependencySet | null;
   readonly _calculate: () => T;
 
   constructor(calculate: () => T) {
+    this._valid = false;
+    this._return = CalculationReturn.Normal;
+    this._value = null;
+    this._dependencies = null;
     this._calculate = calculate;
   }
 
   get(): T {
     const transaction = getTransaction();
+    const lastDependencies = transaction.dependencies;
+    if (lastDependencies !== null) lastDependencies.set(this, null);
 
-    let recalculate = false;
+    updateValidity(transaction, this);
 
-    if (this._state !== CalculationState.Empty && this._dependencies !== null) {
-      const iter = this._dependencies[Symbol.iterator]();
-      let step = iter.next();
-      while (step.done === false) {
-        const entry = step.value;
-        const dependency = entry[0];
-        const lastVersion = entry[1];
-        if (dependency._version > lastVersion) {
-          recalculate = true;
-          break;
-        }
-        step = iter.next();
-      }
-    }
+    if (this._valid === false) {
+      transaction.dependencies = new Map();
 
-    if (this._state === CalculationState.Empty || recalculate === true) {
-      const lastDependencyTracker = transaction.dependencyTracker;
-      transaction.dependencyTracker = new Map();
-
-      let state: CalculationState;
-      let value: unknown;
       try {
-        value = this._calculate();
-        state = CalculationState.Normal;
+        this._value = this._calculate();
+        this._return = CalculationReturn.Normal;
       } catch (error) {
-        value = error;
-        state = CalculationState.Abrupt;
+        this._value = error;
+        this._return = CalculationReturn.Abrupt;
       }
 
-      if (!(state === this._state && objectIs(value, this._value) === true)) {
-        this._version++;
-        this._state = state;
-        this._value = value;
-      }
-
-      const dependencies = transaction.dependencyTracker;
-      transaction.dependencyTracker = lastDependencyTracker;
+      const dependencies = transaction.dependencies;
+      transaction.dependencies = lastDependencies;
 
       this._dependencies = dependencies;
+      this._valid = transaction.id;
     }
 
-    // We must track the dependency _after_ recalculating in case the
-    // version changed.
-    trackDependency(transaction, this);
-
-    if (this._state === CalculationState.Normal) {
+    if (this._return === CalculationReturn.Normal) {
       return this._value as T;
     } else {
       throw this._value;
     }
   }
+}
+
+function updateValidity(
+  transaction: Transaction,
+  calculation: Calculation<unknown>,
+): void {
+  if (calculation._valid === false) return;
+  if (calculation._valid === transaction.id) return;
+
+  const iterator = calculation._dependencies![Symbol.iterator]();
+  let step = iterator.next();
+
+  while (step.done === false) {
+    const entry = step.value as DependencySetEntry;
+
+    if (entry[1] !== null) {
+      if (entry[0]._version > entry[1]) {
+        calculation._valid = false;
+        return;
+      }
+    } else {
+      updateValidity(transaction, entry[0]);
+      if (entry[0]._valid === false) {
+        calculation._valid = false;
+        return;
+      }
+    }
+
+    step = iterator.next();
+  }
+
+  calculation._valid = transaction.id;
+  return;
 }
 
 /**
