@@ -127,16 +127,42 @@ export class Calculation<T> {
   }
 }
 
+/**
+ * Updates the validity of a calculation so that its validity _known_ in the
+ * context of the current transaction.
+ *
+ * - If a calculation is known to be invalid then the `_valid` field will
+ *   be `false`.
+ * - If a calculation is known to be valid in a transaction then the `_valid`
+ *   field will be set to the ID of the transaction this calculation is known to
+ *   be valid in.
+ *
+ * Also recursively updates the validity of some calculation dependencies. If we
+ * reach a dependency we know to be invalid then we stop updating our
+ * dependencies. Notably, this means if a dependency of this calculation is
+ * referenced again in this transaction then its validity will be known.
+ *
+ * Writes are not allowed to happen in a transaction which is why we can only
+ * know if a given calculation is valid inside of a transaction. If we are not
+ * in a transaction, then a write could happen at any time without us knowing. A
+ * calculation only listens to updates from its dependencies when it itself is
+ * being listened to which is why a calculation can be in a state of
+ * unknown validity.
+ */
 function updateValidity(
   transaction: Transaction,
   calculation: Calculation<unknown>,
 ): void {
+  // If we know the validity of our calculation we don’t need to do
+  // anything else...
   if (calculation._valid === false) return;
   if (calculation._valid === transaction.id) return;
 
   const iterator = calculation._dependencies![Symbol.iterator]();
   let step = iterator.next();
 
+  // Iterate through all of our dependencies to make sure they are still valid.
+  // If we find a single invalid dependency we will stop iterating.
   while (step.done === false) {
     const entry = step.value as DependencySetEntry;
 
@@ -156,6 +182,8 @@ function updateValidity(
     step = iterator.next();
   }
 
+  // All our dependencies are valid so we know that this dependency must also
+  // be valid.
   calculation._valid = transaction.id;
   return;
 }
