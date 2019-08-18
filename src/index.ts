@@ -4,7 +4,47 @@ interface Dependency {
 
 type DependencySet = Map<Dependency, number>;
 
-let dependencyTracker: DependencySet | null = null;
+type Transaction = {
+  dependencyTracker: DependencySet | null;
+};
+
+let currentTransaction: Transaction | null = null;
+
+export function withTransaction<T>(action: () => T): T {
+  let lastTransaction = currentTransaction;
+  currentTransaction = {
+    dependencyTracker: null,
+  };
+  try {
+    return action();
+  } finally {
+    currentTransaction = lastTransaction;
+  }
+}
+
+function withoutTransaction(): void {
+  if (currentTransaction !== null) {
+    throw new Error('Must not be within a transaction.');
+  }
+}
+
+function getTransaction(): Transaction {
+  if (currentTransaction === null) {
+    // TODO: Better error message.
+    throw new Error('Must be within a transaction.');
+  }
+  return currentTransaction;
+}
+
+function trackDependency(
+  transaction: Transaction,
+  dependency: Dependency,
+): void {
+  const {dependencyTracker} = transaction;
+  if (dependencyTracker !== null) {
+    dependencyTracker.set(dependency, dependency._version);
+  }
+}
 
 export class Value<T> implements Dependency {
   _version = 0;
@@ -15,15 +55,14 @@ export class Value<T> implements Dependency {
   }
 
   get(): T {
-    // TODO: Throw an error if `dependencyTracker` is null.
-    if (dependencyTracker !== null) {
-      dependencyTracker.set(this, this._version);
-    }
+    const transaction = getTransaction();
+    trackDependency(transaction, this);
     return this._value;
   }
 
   set(value: T): void {
-    // TODO: Throw if `dependencyTracker` is not null.
+    withoutTransaction();
+
     // TODO: Schedule this for later?
     if (!objectIs(value, this._value)) {
       this._version++;
@@ -50,7 +89,7 @@ export class Calculation<T> implements Dependency {
   }
 
   get(): T {
-    // TODO: Throw an error if `dependencyTracker` is null.
+    const transaction = getTransaction();
 
     let recalculate = false;
 
@@ -70,8 +109,8 @@ export class Calculation<T> implements Dependency {
     }
 
     if (this._state === CalculationState.Empty || recalculate === true) {
-      const lastDependencyTracker = dependencyTracker;
-      dependencyTracker = new Map();
+      const lastDependencyTracker = transaction.dependencyTracker;
+      transaction.dependencyTracker = new Map();
 
       let state: CalculationState;
       let value: unknown;
@@ -89,17 +128,15 @@ export class Calculation<T> implements Dependency {
         this._value = value;
       }
 
-      const dependencies = dependencyTracker;
-      dependencyTracker = lastDependencyTracker;
+      const dependencies = transaction.dependencyTracker;
+      transaction.dependencyTracker = lastDependencyTracker;
 
       this._dependencies = dependencies;
     }
 
     // We must track the dependency _after_ recalculating in case the
     // version changed.
-    if (dependencyTracker !== null) {
-      dependencyTracker.set(this, this._version);
-    }
+    trackDependency(transaction, this);
 
     if (this._state === CalculationState.Normal) {
       return this._value as T;
