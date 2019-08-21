@@ -93,11 +93,6 @@ export class Formula<T> implements Calc<T> {
         completion = FormulaCompletion.Abrupt;
       }
 
-      // NOTE: We assume that this function never throws which means we can
-      // restore our environment variables outside of a `finally` clause.
-      const dependencies = currentFormulaDependencies;
-      currentFormulaDependencies = lastDependencies;
-
       if (
         !objectIs(this._value, value) ||
         this._completion !== completion ||
@@ -106,8 +101,12 @@ export class Formula<T> implements Calc<T> {
         this._version++;
         this._completion = completion;
         this._value = value;
-        this._dependencies = dependencies;
       }
+
+      // NOTE: We assume that this function never throws which means we can
+      // restore our environment variables outside of a `finally` clause.
+      this._dependencies = currentFormulaDependencies;
+      currentFormulaDependencies = lastDependencies;
     }
 
     // We know that our formula is valid in this transaction.
