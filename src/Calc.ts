@@ -1,5 +1,5 @@
 export interface Calc<T> {
-  getWithoutListening(): T;
   calc(): T;
+  getWithoutListening(): T;
   _getLatestVersion(): number;
 }

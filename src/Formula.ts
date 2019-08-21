@@ -18,8 +18,10 @@ export class Formula<T> implements Calc<T> {
     this._calculate = calculate;
   }
 
-  getWithoutListening(): T {
-    this._getLatestVersion();
+  calc(): T {
+    const dependencies = getFormulaDependencies();
+    const version = this._getLatestVersion();
+    dependencies.set(this, version);
 
     if (this._completion === FormulaCompletion.Normal) {
       return this._value as T;
@@ -28,10 +30,8 @@ export class Formula<T> implements Calc<T> {
     }
   }
 
-  calc(): T {
-    const dependencies = getFormulaDependencies();
-    const version = this._getLatestVersion();
-    dependencies.set(this, version);
+  getWithoutListening(): T {
+    this._getLatestVersion();
 
     if (this._completion === FormulaCompletion.Normal) {
       return this._value as T;
@@ -135,7 +135,7 @@ let currentFormulaTransaction: number | null = null;
 
 export type FormulaDependencies = Map<Calc<unknown>, number>;
 
-let currentFormulaDependencies: FormulaDependencies | null = null;
+export let currentFormulaDependencies: FormulaDependencies | null = null;
 
 export function getFormulaDependencies(): FormulaDependencies {
   if (currentFormulaDependencies === null) {

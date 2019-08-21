@@ -1,5 +1,5 @@
 import {Calc} from './Calc';
-import {getFormulaDependencies} from './Formula';
+import {currentFormulaDependencies, getFormulaDependencies} from './Formula';
 import {objectIs} from './objectIs';
 
 export class Cell<T> implements Calc<T> {
@@ -12,6 +12,9 @@ export class Cell<T> implements Calc<T> {
   }
 
   set(newValue: T): void {
+    if (currentFormulaDependencies !== null) {
+      throw new Error('Can not call `cell.set()` inside of a formula.');
+    }
     if (!objectIs(this._value, newValue)) {
       this._version++;
       this._value = newValue;
