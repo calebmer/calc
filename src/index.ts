@@ -1,54 +1,37 @@
-type DependencySet = Map<
-  Value<unknown> | Calculation<unknown>,
-  ValueVersion | null
->;
+type Level = number;
 
-type DependencySetEntry =
-  | [Value<unknown>, ValueVersion]
-  | [Calculation<unknown>, null];
+type Version = number;
 
-type TransactionID = number;
+interface Dependency {
+  _version: Version;
+}
 
-type Transaction = {
-  id: TransactionID;
-  dependencies: DependencySet | null;
-};
+type DependencySet = Map<Dependency, Version>;
 
-let nextTransactionID = 0;
+let currentLevel = 1;
 
-let currentTransaction: Transaction | null = null;
+let currentDependencies: DependencySet | null = null;
 
 export function withTransaction<T>(action: () => T): T {
-  let lastTransaction = currentTransaction;
-  currentTransaction = {
-    id: nextTransactionID++,
-    dependencies: null,
-  };
+  let lastDependencies = currentDependencies;
+  currentDependencies = new Map();
   try {
     return action();
   } finally {
-    currentTransaction = lastTransaction;
+    currentDependencies = lastDependencies;
   }
 }
 
-function withoutTransaction(): void {
-  if (currentTransaction !== null) {
-    throw new Error('Must not be within a transaction.');
-  }
-}
-
-function getTransaction(): Transaction {
-  if (currentTransaction === null) {
+function getDependencies(): DependencySet {
+  if (currentDependencies === null) {
     // TODO: Better error message.
     throw new Error('Must be within a transaction.');
   }
-  return currentTransaction;
+  return currentDependencies;
 }
 
-type ValueVersion = number;
-
-export class Value<T> {
-  _version: ValueVersion;
+export class Value<T> implements Dependency {
+  _version: Version;
   _value: T;
 
   constructor(value: T) {
@@ -57,38 +40,39 @@ export class Value<T> {
   }
 
   get(): T {
-    const {dependencies} = getTransaction();
-    if (dependencies !== null) dependencies.set(this, this._version);
-
+    getDependencies().set(this, this._version);
     return this._value;
   }
 
   set(value: T): void {
-    withoutTransaction();
-
-    // TODO: Schedule this for later?
+    if (currentDependencies !== null) {
+      throw new Error('Must not be within a transaction.');
+    }
     if (!objectIs(value, this._value)) {
+      currentLevel++;
       this._version++;
       this._value = value;
     }
   }
 }
 
-const enum CalculationReturn {
+const enum CalculationCompletion {
   Normal = 0,
   Abrupt = 1,
 }
 
-export class Calculation<T> {
-  _valid: TransactionID | false;
-  _return: CalculationReturn;
+export class Calculation<T> implements Dependency {
+  _level: Level;
+  _version: Version;
+  _completion: CalculationCompletion;
   _value: unknown;
   _dependencies: DependencySet | null;
   readonly _calculate: () => T;
 
   constructor(calculate: () => T) {
-    this._valid = false;
-    this._return = CalculationReturn.Normal;
+    this._level = 0;
+    this._version = 0;
+    this._completion = CalculationCompletion.Normal;
     this._value = null;
     this._dependencies = null;
     this._calculate = calculate;
@@ -106,10 +90,10 @@ export class Calculation<T> {
 
       try {
         this._value = this._calculate();
-        this._return = CalculationReturn.Normal;
+        this._completion = CalculationCompletion.Normal;
       } catch (error) {
         this._value = error;
-        this._return = CalculationReturn.Abrupt;
+        this._completion = CalculationCompletion.Abrupt;
       }
 
       const dependencies = transaction.dependencies;
@@ -119,11 +103,39 @@ export class Calculation<T> {
       this._valid = transaction.id;
     }
 
-    if (this._return === CalculationReturn.Normal) {
+    if (this._completion === CalculationCompletion.Normal) {
       return this._value as T;
     } else {
       throw this._value;
     }
+  }
+}
+
+function recalculate(calculation: Calculation<unknown>): void {
+  if (calculation._level === currentLevel) return;
+
+  let changed = false;
+
+  const iterator = calculation._dependencies![Symbol.iterator]();
+  let step = iterator.next();
+
+  while (step.done === false) {
+    const entry = step.value as DependencySetEntry;
+
+    if (entry[1] !== null) {
+      if (entry[0]._version > entry[1]) {
+        changed = true;
+        break;
+      }
+    } else {
+      //   updateValidity(transaction, entry[0]);
+      //   if (entry[0]._valid === false) {
+      //     calculation._valid = false;
+      //     return;
+      //   }
+    }
+
+    step = iterator.next();
   }
 }
 
