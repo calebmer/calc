@@ -307,3 +307,22 @@ test('skips update for calculations that throw and are the same when the sub-cal
   expect(calculate1).toHaveBeenCalledTimes(2);
   expect(calculate2).toHaveBeenCalledTimes(1);
 });
+
+test('only recursively calls `_getLatestVersion()` once per transaction', () => {
+  const cell1 = new Cell(1);
+  const formula1 = new Formula(() => cell1.calc());
+  formula1._getLatestVersion = jest.fn(formula1._getLatestVersion);
+  const formula2 = new Formula(() => formula1.calc());
+  const formula3 = new Formula(
+    () =>
+      formula2.calc() +
+      formula2.calc() +
+      formula2.calc() +
+      formula2.calc() +
+      formula2.calc(),
+  );
+
+  expect(formula1._getLatestVersion).toHaveBeenCalledTimes(0);
+  expect(formula3.getWithoutListening()).toEqual(5);
+  expect(formula1._getLatestVersion).toHaveBeenCalledTimes(1);
+});
