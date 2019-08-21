@@ -2,6 +2,7 @@ import {Calc} from './Calc';
 import {objectIs} from './objectIs';
 
 export class Formula<T> implements Calc<T> {
+  _valid: number;
   _version: number;
   _completion: FormulaCompletion;
   _value: unknown;
@@ -9,6 +10,7 @@ export class Formula<T> implements Calc<T> {
   readonly _calculate: () => T;
 
   constructor(calculate: () => T) {
+    this._valid = 0;
     this._version = 0;
     this._completion = FormulaCompletion.Normal;
     this._value = null;
@@ -39,6 +41,19 @@ export class Formula<T> implements Calc<T> {
   }
 
   _getLatestVersion(): number {
+    // Start a new formula transaction if one hasn’t been started yet...
+    let lastFormulaTransaction = currentFormulaTransaction;
+    if (currentFormulaTransaction === null) {
+      currentFormulaTransaction = nextFormulaTransaction++;
+    }
+
+    // If we previously validated this formula in the current transaction then
+    // we don’t need to do it again.
+    if (this._valid === currentFormulaTransaction) {
+      return this._version;
+    }
+
+    // Force a calculation if we haven’t run one before...
     let recalculate = this._dependencies === null;
 
     // Recursively check all of our dependencies to make sure we are using the
@@ -78,6 +93,8 @@ export class Formula<T> implements Calc<T> {
         completion = FormulaCompletion.Abrupt;
       }
 
+      // NOTE: We assume that this function never throws which means we can
+      // restore our environment variables outside of a `finally` clause.
       const dependencies = currentFormulaDependencies;
       currentFormulaDependencies = lastDependencies;
 
@@ -93,6 +110,16 @@ export class Formula<T> implements Calc<T> {
       }
     }
 
+    // We know that our formula is valid in this transaction.
+    this._valid = currentFormulaTransaction;
+
+    // Restore the old formula transaction if we ended up creating one for
+    // this call.
+    //
+    // NOTE: We assume that this function never throws which means we can
+    // restore our environment variables outside of a `finally` clause.
+    currentFormulaTransaction = lastFormulaTransaction;
+
     return this._version;
   }
 }
@@ -101,6 +128,10 @@ const enum FormulaCompletion {
   Normal = 0,
   Abrupt = 1,
 }
+
+let nextFormulaTransaction = 1;
+
+let currentFormulaTransaction: number | null = null;
 
 export type FormulaDependencies = Map<Calc<unknown>, number>;
 
