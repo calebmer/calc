@@ -1,7 +1,7 @@
 import {Calc} from './Calc';
 import {objectIs} from './objectIs';
 
-export class Formula<T> implements Calc<T> {
+export class Formula<T> extends Calc<T> {
   _valid: number;
   _version: number;
   _completion: FormulaCompletion;
@@ -10,6 +10,7 @@ export class Formula<T> implements Calc<T> {
   readonly _calculate: () => T;
 
   constructor(calculate: () => T) {
+    super();
     this._valid = 0;
     this._version = 0;
     this._completion = FormulaCompletion.Normal;
@@ -80,7 +81,7 @@ export class Formula<T> implements Calc<T> {
     // We only increment the version if we got a value that is different from
     // the old one.
     if (recalculate === true) {
-      let lastDependencies = currentFormulaDependencies;
+      let lastFormulaDependencies = currentFormulaDependencies;
       currentFormulaDependencies = new Map();
 
       let completion: FormulaCompletion;
@@ -93,6 +94,7 @@ export class Formula<T> implements Calc<T> {
         completion = FormulaCompletion.Abrupt;
       }
 
+      // Did the value change? If so we need to increment the version.
       if (
         !objectIs(this._value, value) ||
         this._completion !== completion ||
@@ -105,8 +107,32 @@ export class Formula<T> implements Calc<T> {
 
       // NOTE: We assume that this function never throws which means we can
       // restore our environment variables outside of a `finally` clause.
-      this._dependencies = currentFormulaDependencies;
-      currentFormulaDependencies = lastDependencies;
+      const dependencies = currentFormulaDependencies;
+      currentFormulaDependencies = lastFormulaDependencies;
+
+      const lastDependencies = this._dependencies;
+      this._dependencies = dependencies;
+
+      // If we need to listen to our dependencies for changes:
+      //
+      // - Add ourselves as a dependent to new dependencies.
+      // - Remove ourselves as a dependent from old dependencies.
+      if (shouldListen(this)) {
+        if (lastDependencies === null) {
+          dependencies.forEach((_version, dependency) => {
+            dependency._addDependent(this);
+          });
+        } else {
+          dependencies.forEach((_version, dependency) => {
+            if (lastDependencies.delete(dependency) === false) {
+              dependency._addDependent(this);
+            }
+          });
+          lastDependencies.forEach((_version, lastDependency) => {
+            lastDependency._removeDependent(this);
+          });
+        }
+      }
     }
 
     // We know that our formula is valid in this transaction.
@@ -120,6 +146,30 @@ export class Formula<T> implements Calc<T> {
     currentFormulaTransaction = lastFormulaTransaction;
 
     return this._version;
+  }
+
+  _addDependent(dependent: Calc<unknown>): void {
+    const wasListening = shouldListen(this);
+    super._addDependent(dependent);
+    updateDependencyListeners(this, wasListening);
+  }
+
+  _removeDependent(dependent: Calc<unknown>): void {
+    const wasListening = shouldListen(this);
+    super._removeDependent(dependent);
+    updateDependencyListeners(this, wasListening);
+  }
+
+  addListener(listener: () => void): void {
+    const wasListening = shouldListen(this);
+    super.addListener(listener);
+    updateDependencyListeners(this, wasListening);
+  }
+
+  removeListener(listener: () => void): void {
+    const wasListening = shouldListen(this);
+    super.removeListener(listener);
+    updateDependencyListeners(this, wasListening);
   }
 }
 
@@ -141,4 +191,31 @@ export function getFormulaDependencies(): FormulaDependencies {
     throw new Error('Can only call `calc()` inside of a formula.');
   }
   return currentFormulaDependencies;
+}
+
+function shouldListen(formula: Formula<unknown>): boolean {
+  return formula._dependents !== null || formula._listeners !== null;
+}
+
+function updateDependencyListeners(
+  formula: Formula<unknown>,
+  wasListening: boolean,
+): void {
+  const willListen = shouldListen(formula);
+
+  if (willListen === true && wasListening === false) {
+    if (formula._dependencies === null) {
+      formula._getLatestVersion();
+    }
+    formula._dependencies!.forEach((_version, dependency) => {
+      dependency._addDependent(formula);
+    });
+  } else if (willListen === false && wasListening === true) {
+    if (formula._dependencies === null) {
+      formula._getLatestVersion();
+    }
+    formula._dependencies!.forEach((_version, dependency) => {
+      dependency._removeDependent(formula);
+    });
+  }
 }

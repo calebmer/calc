@@ -1,5 +1,9 @@
+import * as SchedulerMock from 'scheduler/unstable_mock';
+jest.mock('scheduler', () => SchedulerMock);
+
 import {Formula} from '../Formula';
 import {Cell} from '../Cell';
+import {unstable_flushAll as flushAll} from 'scheduler/unstable_mock';
 
 test('`calc()` will throw outside a formula', () => {
   const formula = new Formula(() => 1);
@@ -325,4 +329,119 @@ test('only recursively calls `_getLatestVersion()` once per transaction', () => 
   expect(formula1._getLatestVersion).toHaveBeenCalledTimes(0);
   expect(formula3.getWithoutListening()).toEqual(5);
   expect(formula1._getLatestVersion).toHaveBeenCalledTimes(1);
+});
+
+test('a listener will be called when a dependency updates', () => {
+  const cell1 = new Cell(1);
+  const cell2 = new Cell(1);
+  const formula = new Formula(() => cell1.calc() + cell2.calc());
+  const listener = jest.fn(() => {});
+
+  formula.addListener(listener);
+  expect(listener).toHaveBeenCalledTimes(0);
+  cell1.set(2);
+  expect(listener).toHaveBeenCalledTimes(0);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+  cell2.set(2);
+  expect(listener).toHaveBeenCalledTimes(1);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
+});
+
+test('a listener will be called when a dependency of a dependency updates', () => {
+  const cell1 = new Cell(1);
+  const cell2 = new Cell(1);
+  const formula1 = new Formula(() => cell1.calc() + cell2.calc());
+  const formula2 = new Formula(() => formula1.calc());
+  const listener = jest.fn(() => {});
+
+  formula2.addListener(listener);
+  expect(listener).toHaveBeenCalledTimes(0);
+  cell1.set(2);
+  expect(listener).toHaveBeenCalledTimes(0);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+  cell2.set(2);
+  expect(listener).toHaveBeenCalledTimes(1);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
+});
+
+test('a listener will not be called when a removed dependency updates', () => {
+  const cell1 = new Cell(true);
+  const cell2 = new Cell(1);
+  const formula = new Formula(() => (cell1.calc() ? cell2.calc() : 0));
+  const listener = jest.fn(() => {});
+
+  formula.addListener(listener);
+  expect(listener).toHaveBeenCalledTimes(0);
+  cell2.set(2);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+  cell1.set(false);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
+  cell2.set(3);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
+});
+
+test('a listener will not be called when a removed dependency updates after a recalculation', () => {
+  const cell1 = new Cell(true);
+  const cell2 = new Cell(1);
+  const formula = new Formula(() => (cell1.calc() ? cell2.calc() : 0));
+  const listener = jest.fn(() => {});
+
+  formula.addListener(listener);
+  expect(listener).toHaveBeenCalledTimes(0);
+  cell2.set(2);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+  cell1.set(false);
+  expect(formula.getWithoutListening()).toEqual(0);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
+  cell2.set(3);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
+});
+
+test('a listener will be called when an added dependency updates', () => {
+  const cell1 = new Cell(false);
+  const cell2 = new Cell(1);
+  const formula = new Formula(() => (cell1.calc() ? cell2.calc() : 0));
+  const listener = jest.fn(() => {});
+
+  formula.addListener(listener);
+  expect(listener).toHaveBeenCalledTimes(0);
+  cell2.set(2);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(0);
+  cell1.set(true);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+  cell2.set(3);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
+});
+
+test('a listener will be called when an added dependency updates after a recalculation', () => {
+  const cell1 = new Cell(false);
+  const cell2 = new Cell(1);
+  const formula = new Formula(() => (cell1.calc() ? cell2.calc() : 0));
+  const listener = jest.fn(() => {});
+
+  formula.addListener(listener);
+  expect(listener).toHaveBeenCalledTimes(0);
+  cell2.set(2);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(0);
+  cell1.set(true);
+  expect(formula.getWithoutListening()).toEqual(2);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+  cell2.set(3);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
 });

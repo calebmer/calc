@@ -6,6 +6,9 @@
     "tsc": "tsc",
     "jest": "jest --watch"
   },
+  "dependencies": {
+    "scheduler": "^0.15.0"
+  },
   "devDependencies": {
     "@types/jest": "^24.0.17",
     "jest": "^24.8.0",

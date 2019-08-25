@@ -1,5 +1,14 @@
+import * as SchedulerMock from 'scheduler/unstable_mock';
+jest.mock('scheduler', () => SchedulerMock);
+
 import {Cell} from '../Cell';
 import {Formula} from '../Formula';
+import {
+  unstable_flushAll as flushAll,
+  unstable_runWithPriority as runWithPriority,
+  unstable_LowPriority as LowPriority,
+  unstable_NormalPriority as NormalPriority,
+} from 'scheduler/unstable_mock';
 
 test('`calc()` will throw outside a formula', () => {
   const cell = new Cell(1);
@@ -26,4 +35,85 @@ test('set the value of a basic cell', () => {
   expect(cell.getWithoutListening()).toEqual(1);
   cell.set(2);
   expect(cell.getWithoutListening()).toEqual(2);
+});
+
+test('a listener will be called when the cell updates', () => {
+  const cell = new Cell(1);
+  const listener = jest.fn(() => {});
+
+  cell.addListener(listener);
+  cell.set(2);
+  expect(listener).toHaveBeenCalledTimes(0);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+  cell.set(3);
+  expect(listener).toHaveBeenCalledTimes(1);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
+});
+
+test('a listener can be removed', () => {
+  const cell = new Cell(1);
+  const listener = jest.fn(() => {});
+
+  cell.addListener(listener);
+  cell.set(2);
+  expect(listener).toHaveBeenCalledTimes(0);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+  cell.removeListener(listener);
+  cell.set(3);
+  expect(listener).toHaveBeenCalledTimes(1);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+});
+
+test('a listener will be called if added after a cell update but before the scheduled update', () => {
+  const cell = new Cell(1);
+  const listener = jest.fn(() => {});
+
+  cell.set(2);
+  cell.addListener(listener);
+  expect(listener).toHaveBeenCalledTimes(0);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+});
+
+test('a listener can be removed after an update but before the scheduled update', () => {
+  const cell = new Cell(1);
+  const listener = jest.fn(() => {});
+
+  cell.addListener(listener);
+  cell.set(2);
+  expect(listener).toHaveBeenCalledTimes(0);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+  cell.set(3);
+  cell.removeListener(listener);
+  expect(listener).toHaveBeenCalledTimes(1);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(1);
+});
+
+test('two synchronous updates will call the listener twice', () => {
+  const cell = new Cell(1);
+  const listener = jest.fn(() => {});
+
+  cell.addListener(listener);
+  cell.set(2);
+  cell.set(3);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
+});
+
+test('two asynchronous updates will only call the listener twice', () => {
+  const cell = new Cell(1);
+  const listener = jest.fn(() => {});
+
+  cell.addListener(listener);
+  cell.set(2);
+  flushAll();
+  cell.set(3);
+  flushAll();
+  expect(listener).toHaveBeenCalledTimes(2);
 });
