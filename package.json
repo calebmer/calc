@@ -3,8 +3,8 @@
   "name": "calculator",
   "version": "0.0.0",
   "scripts": {
-    "tsc": "tsc",
-    "jest": "jest --watch"
+    "types": "tsc",
+    "test": "jest --watch"
   },
   "dependencies": {
     "scheduler": "^0.15.0"
