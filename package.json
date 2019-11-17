@@ -5,7 +5,6 @@
   ],
   "dependencies": {
     "@types/jest": "^24.0.17",
-    "@types/scheduler": "^0.16.1",
     "jest": "^24.8.0",
     "prettier": "^1.19.1",
     "ts-jest": "^24.0.2",

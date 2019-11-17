@@ -1,9 +1,5 @@
-import * as SchedulerMock from 'scheduler/unstable_mock';
-jest.mock('scheduler', () => SchedulerMock);
-
 import {Formula} from './Formula';
 import {Cell} from './Cell';
-import {unstable_flushAll as flushAll} from 'scheduler/unstable_mock';
 
 test('`calc()` will throw outside a formula', () => {
   const formula = new Formula(() => 1);
@@ -341,11 +337,7 @@ test('a listener will never be called when dependencies update until the formula
   expect(listener).toHaveBeenCalledTimes(0);
   cell1.set(2);
   expect(listener).toHaveBeenCalledTimes(0);
-  flushAll();
-  expect(listener).toHaveBeenCalledTimes(0);
   cell2.set(2);
-  expect(listener).toHaveBeenCalledTimes(0);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(0);
 });
 
@@ -359,12 +351,8 @@ test('a listener will not be called when a dependency of an invalid formula upda
   formula.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   cell1.set(2);
-  expect(listener).toHaveBeenCalledTimes(0);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
   cell2.set(2);
-  expect(listener).toHaveBeenCalledTimes(1);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
@@ -378,13 +366,9 @@ test('a listener will be called when a dependency updates', () => {
   formula.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   cell1.set(2);
-  expect(listener).toHaveBeenCalledTimes(0);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
   formula.getWithoutListening();
   cell2.set(2);
-  expect(listener).toHaveBeenCalledTimes(1);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -399,11 +383,7 @@ test('a listener will never be called when a dependency of a dependency updates 
   expect(listener).toHaveBeenCalledTimes(0);
   cell1.set(2);
   expect(listener).toHaveBeenCalledTimes(0);
-  flushAll();
-  expect(listener).toHaveBeenCalledTimes(0);
   cell2.set(2);
-  expect(listener).toHaveBeenCalledTimes(0);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(0);
 });
 
@@ -418,12 +398,8 @@ test('a listener will not be called when a dependency of a dependency of an inva
   formula2.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   cell1.set(2);
-  expect(listener).toHaveBeenCalledTimes(0);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
   cell2.set(2);
-  expect(listener).toHaveBeenCalledTimes(1);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
@@ -438,13 +414,9 @@ test('a listener will be called when a dependency of a dependency updates', () =
   formula2.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   cell1.set(2);
-  expect(listener).toHaveBeenCalledTimes(0);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
   formula2.getWithoutListening();
   cell2.set(2);
-  expect(listener).toHaveBeenCalledTimes(1);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -458,14 +430,11 @@ test('a listener will not be called when a removed dependency updates and the fo
   expect(listener).toHaveBeenCalledTimes(0);
   formula.getWithoutListening();
   cell2.set(2);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
   formula.getWithoutListening();
   cell1.set(false);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
   cell2.set(3);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -479,15 +448,12 @@ test('a listener will not be called when a removed dependency updates', () => {
   expect(listener).toHaveBeenCalledTimes(0);
   formula.getWithoutListening();
   cell2.set(2);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
   formula.getWithoutListening();
   cell1.set(false);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
   formula.getWithoutListening();
   cell2.set(3);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -501,14 +467,12 @@ test('a listener will not be called when a removed dependency updates after a re
   formula.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   cell2.set(2);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
+  expect(formula.getWithoutListening()).toEqual(2);
   cell1.set(false);
   expect(formula.getWithoutListening()).toEqual(0);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
   cell2.set(3);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -522,14 +486,11 @@ test('a listener will not be called when an added dependency updates and the for
   expect(listener).toHaveBeenCalledTimes(0);
   formula.getWithoutListening();
   cell2.set(2);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(0);
   formula.getWithoutListening();
   cell1.set(true);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
   cell2.set(3);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
@@ -543,15 +504,12 @@ test('a listener will be called when an added dependency updates', () => {
   expect(listener).toHaveBeenCalledTimes(0);
   formula.getWithoutListening();
   cell2.set(2);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(0);
   formula.getWithoutListening();
   cell1.set(true);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
   formula.getWithoutListening();
   cell2.set(3);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -565,15 +523,12 @@ test('a listener will be called when an added dependency updates after a recalcu
   expect(listener).toHaveBeenCalledTimes(0);
   formula.getWithoutListening();
   cell2.set(2);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(0);
   cell1.set(true);
   expect(formula.getWithoutListening()).toEqual(2);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
   formula.getWithoutListening();
   cell2.set(3);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -596,10 +551,8 @@ test('updates can be asynchronously observed', () => {
 
   expect(formula.getWithoutListening()).toEqual(2);
   cell1.set(2);
-  flushAll();
   expect(formula.getWithoutListening()).toEqual(3);
   cell2.set(3);
-  flushAll();
   expect(formula.getWithoutListening()).toEqual(5);
 });
 
@@ -613,11 +566,9 @@ test('won’t recalculate when dependencies change if there are no listeners', (
   expect(calculate).toHaveBeenCalledTimes(1);
   cell.set(2);
   expect(calculate).toHaveBeenCalledTimes(1);
-  flushAll();
   expect(calculate).toHaveBeenCalledTimes(1);
   cell.set(3);
   expect(calculate).toHaveBeenCalledTimes(1);
-  flushAll();
   expect(calculate).toHaveBeenCalledTimes(1);
   expect(formula.getWithoutListening()).toEqual(4);
   expect(calculate).toHaveBeenCalledTimes(2);
@@ -634,11 +585,9 @@ test('won’t recalculate when dependencies change', () => {
   expect(calculate).toHaveBeenCalledTimes(1);
   cell.set(2);
   expect(calculate).toHaveBeenCalledTimes(1);
-  flushAll();
   expect(calculate).toHaveBeenCalledTimes(1);
   cell.set(3);
   expect(calculate).toHaveBeenCalledTimes(1);
-  flushAll();
   expect(calculate).toHaveBeenCalledTimes(1);
   expect(formula.getWithoutListening()).toEqual(4);
   expect(calculate).toHaveBeenCalledTimes(2);
@@ -659,7 +608,6 @@ test('won’t recalculate a dependency that has been removed', () => {
   expect(calculate2).toHaveBeenCalledTimes(1);
   cell2.set(2);
   cell1.set(false);
-  flushAll();
   expect(formula2.getWithoutListening()).toEqual(0);
   expect(calculate1).toHaveBeenCalledTimes(1);
   expect(calculate2).toHaveBeenCalledTimes(2);
@@ -681,7 +629,6 @@ test('won’t recalculate a dependency that has been removed when there are list
   expect(calculate2).toHaveBeenCalledTimes(1);
   cell2.set(2);
   cell1.set(false);
-  flushAll();
   expect(formula2.getWithoutListening()).toEqual(0);
   expect(calculate1).toHaveBeenCalledTimes(1);
   expect(calculate2).toHaveBeenCalledTimes(2);
@@ -697,8 +644,6 @@ test('won’t call the listener twice if a dependency is reused', () => {
   expect(listener).toHaveBeenCalledTimes(0);
   formula2.getWithoutListening();
   cell.set(2);
-  expect(listener).toHaveBeenCalledTimes(0);
-  flushAll();
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
@@ -726,7 +671,6 @@ test('we don’t remove dependents until after we invalidate', () => {
   cell1.set(false);
   expect(addDependent).toHaveBeenCalledTimes(1);
   expect(removeDependent).toHaveBeenCalledTimes(0);
-  flushAll();
   expect(addDependent).toHaveBeenCalledTimes(1);
   expect(removeDependent).toHaveBeenCalledTimes(0);
   expect(formula.getWithoutListening()).toEqual(0);

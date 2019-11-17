@@ -87,6 +87,10 @@ export abstract class Calc<T> {
    * listener may not be called again. Use `getWithoutListening()` when your
    * listener is called to make sure you have the latest value.
    *
+   * Listeners will be called synchronously when the value changes. We depend
+   * on you or your framework to schedule work for later instead of
+   * synchronously blocking the thread.
+   *
    * If the listener throws we will throw an unhandled exception in a different
    * event loop context.
    */
@@ -126,9 +130,7 @@ export abstract class Calc<T> {
         try {
           listener();
         } catch (error) {
-          setTimeout(() => {
-            throw error;
-          }, 0);
+          scheduleUncaughtException(error);
         }
       });
     }
@@ -138,4 +140,20 @@ export abstract class Calc<T> {
       });
     }
   }
+}
+
+/**
+ * Schedule an error to be thrown as soon as possible as an uncaught exception
+ * in an empty event loop context.
+ *
+ * Useful when user code throws an error that you want to report but you don’t
+ * want to abort the currently running process.
+ */
+function scheduleUncaughtException(error: unknown) {
+  // Use `setTimeout()` so that the exception isn’t an unhandled promise
+  // rejection. Technically using a promise microtask would throw the
+  // error faster.
+  setTimeout(() => {
+    throw error;
+  }, 0);
 }
