@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "workspaces": [
+    "workspaces/*"
+  ],
+  "dependencies": {
+    "prettier": "^1.19.1",
+    "typescript": "^3.7.2"
+  }
+}
