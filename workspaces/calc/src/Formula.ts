@@ -179,13 +179,26 @@ const enum FormulaCompletion {
   Abrupt = 'abrupt',
 }
 
-let nextFormulaTransaction = 1;
+type FormulaDependencies = Map<Calc<unknown>, number>;
 
+/**
+ * When evaluating a formula we capture its dependencies in this set. Every time
+ * we start evaluating a formula we create a new set. Formula dependencies are
+ * local to a single formula evaluation!
+ */
+export let currentFormulaDependencies: FormulaDependencies | null = null;
+
+/**
+ * When we evaluate a formula we record which transaction it was evaluated in.
+ * The next time we go to evaluate that formula if we are in the same
+ * transaction then we know for certain the formula hasn’t changed.
+ *
+ * The formula transaction represents some scope where all calculations are
+ * guaranteed to be immutable.
+ */
 let currentFormulaTransaction: number | null = null;
 
-export type FormulaDependencies = Map<Calc<unknown>, number>;
-
-export let currentFormulaDependencies: FormulaDependencies | null = null;
+let nextFormulaTransaction = 1;
 
 function shouldListen(formula: Formula<unknown>): boolean {
   return formula._dependents !== null || formula._listeners !== null;
