@@ -2,10 +2,6 @@
   "private": true,
   "name": "calculator",
   "version": "0.0.0",
-  "scripts": {
-    "types": "tsc",
-    "test": "jest --watch"
-  },
   "dependencies": {
     "scheduler": "^0.15.0"
   },
