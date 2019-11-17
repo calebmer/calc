@@ -174,8 +174,8 @@ export class Formula<T> extends Calc<T> {
 }
 
 const enum FormulaCompletion {
-  Normal = 0,
-  Abrupt = 1,
+  Normal = 'normal',
+  Abrupt = 'abrupt',
 }
 
 let nextFormulaTransaction = 1;
