@@ -117,3 +117,25 @@ test('two asynchronous updates will only call the listener twice', () => {
   flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
 });
+
+test('set can be synchronously observed', () => {
+  const cell = new Cell(1);
+
+  expect(cell.getWithoutListening()).toEqual(1);
+  cell.set(2);
+  expect(cell.getWithoutListening()).toEqual(2);
+  cell.set(3);
+  expect(cell.getWithoutListening()).toEqual(3);
+});
+
+test('set can be asynchronously observed', () => {
+  const cell = new Cell(1);
+
+  expect(cell.getWithoutListening()).toEqual(1);
+  cell.set(2);
+  flushAll();
+  expect(cell.getWithoutListening()).toEqual(2);
+  cell.set(3);
+  flushAll();
+  expect(cell.getWithoutListening()).toEqual(3);
+});

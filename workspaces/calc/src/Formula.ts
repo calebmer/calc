@@ -98,11 +98,9 @@ export class Formula<T> extends Calc<T> {
       }
 
       // Did the value change? If so we need to increment the version.
-      if (
-        !objectIs(this._value, value) ||
-        this._completion !== completion ||
-        this._dependencies === null
-      ) {
+      const same =
+        objectIs(this._value, value) && this._completion === completion;
+      if (!same) {
         this._version++;
         this._completion = completion;
         this._value = value;
@@ -201,7 +199,7 @@ function updateDependencyListeners(
 
   if (willListen === true && wasListening === false) {
     if (formula._dependencies === null) {
-      formula._getLatestVersion();
+      formula._getLatestVersion(); // TODO: Should we call this?
     }
     formula._dependencies!.forEach((_version, dependency) => {
       dependency._addDependent(formula);

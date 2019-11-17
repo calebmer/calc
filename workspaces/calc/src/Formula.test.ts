@@ -445,3 +445,116 @@ test('a listener will be called when an added dependency updates after a recalcu
   flushAll();
   expect(listener).toHaveBeenCalledTimes(2);
 });
+
+test('updates can be synchronously observed', () => {
+  const cell1 = new Cell(1);
+  const cell2 = new Cell(1);
+  const formula = new Formula(() => cell1.calc() + cell2.calc());
+
+  expect(formula.getWithoutListening()).toEqual(2);
+  cell1.set(2);
+  expect(formula.getWithoutListening()).toEqual(3);
+  cell2.set(3);
+  expect(formula.getWithoutListening()).toEqual(5);
+});
+
+test('updates can be asynchronously observed', () => {
+  const cell1 = new Cell(1);
+  const cell2 = new Cell(1);
+  const formula = new Formula(() => cell1.calc() + cell2.calc());
+
+  expect(formula.getWithoutListening()).toEqual(2);
+  cell1.set(2);
+  flushAll();
+  expect(formula.getWithoutListening()).toEqual(3);
+  cell2.set(3);
+  flushAll();
+  expect(formula.getWithoutListening()).toEqual(5);
+});
+
+test('won’t recalculate when dependencies change if there are no listeners', () => {
+  const cell = new Cell(1);
+  const calculate = jest.fn(() => cell.calc() + 1);
+  const formula = new Formula(calculate);
+
+  expect(calculate).toHaveBeenCalledTimes(0);
+  expect(formula.getWithoutListening()).toEqual(2);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  cell.set(2);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  flushAll();
+  expect(calculate).toHaveBeenCalledTimes(1);
+  cell.set(3);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  flushAll();
+  expect(calculate).toHaveBeenCalledTimes(1);
+  expect(formula.getWithoutListening()).toEqual(4);
+  expect(calculate).toHaveBeenCalledTimes(2);
+});
+
+test('won’t recalculate when dependencies change', () => {
+  const cell = new Cell(1);
+  const calculate = jest.fn(() => cell.calc() + 1);
+  const formula = new Formula(calculate);
+
+  expect(calculate).toHaveBeenCalledTimes(0);
+  formula.addListener(() => {});
+  expect(calculate).toHaveBeenCalledTimes(1);
+  expect(formula.getWithoutListening()).toEqual(2);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  cell.set(2);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  flushAll();
+  expect(calculate).toHaveBeenCalledTimes(1);
+  cell.set(3);
+  expect(calculate).toHaveBeenCalledTimes(1);
+  flushAll();
+  expect(calculate).toHaveBeenCalledTimes(1);
+  expect(formula.getWithoutListening()).toEqual(4);
+  expect(calculate).toHaveBeenCalledTimes(2);
+});
+
+test('won’t recalculate a dependency that has been removed', () => {
+  const cell1 = new Cell(true);
+  const cell2 = new Cell(1);
+  const calculate1 = jest.fn(() => cell2.calc() + 1);
+  const formula1 = new Formula(calculate1);
+  const calculate2 = jest.fn(() => (cell1.calc() ? formula1.calc() + 1 : 0));
+  const formula2 = new Formula(calculate2);
+
+  expect(calculate1).toHaveBeenCalledTimes(0);
+  expect(calculate2).toHaveBeenCalledTimes(0);
+  expect(formula2.getWithoutListening()).toEqual(3);
+  expect(calculate1).toHaveBeenCalledTimes(1);
+  expect(calculate2).toHaveBeenCalledTimes(1);
+  cell2.set(2);
+  cell1.set(false);
+  flushAll();
+  expect(formula2.getWithoutListening()).toEqual(0);
+  expect(calculate1).toHaveBeenCalledTimes(1);
+  expect(calculate2).toHaveBeenCalledTimes(2);
+});
+
+test('won’t recalculate a dependency that has been removed when there are listeners', () => {
+  const cell1 = new Cell(true);
+  const cell2 = new Cell(1);
+  const calculate1 = jest.fn(() => cell2.calc() + 1);
+  const formula1 = new Formula(calculate1);
+  const calculate2 = jest.fn(() => (cell1.calc() ? formula1.calc() + 1 : 0));
+  const formula2 = new Formula(calculate2);
+
+  expect(calculate1).toHaveBeenCalledTimes(0);
+  expect(calculate2).toHaveBeenCalledTimes(0);
+  formula2.addListener(() => {});
+  expect(calculate1).toHaveBeenCalledTimes(1);
+  expect(calculate2).toHaveBeenCalledTimes(1);
+  expect(formula2.getWithoutListening()).toEqual(3);
+  expect(calculate1).toHaveBeenCalledTimes(1);
+  expect(calculate2).toHaveBeenCalledTimes(1);
+  cell2.set(2);
+  cell1.set(false);
+  flushAll();
+  expect(formula2.getWithoutListening()).toEqual(0);
+  expect(calculate1).toHaveBeenCalledTimes(1);
+  expect(calculate2).toHaveBeenCalledTimes(2);
+});
