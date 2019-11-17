@@ -2,7 +2,7 @@ import {Calc} from './Calc';
 import {objectIs} from './objectIs';
 
 export class Formula<T> extends Calc<T> {
-  _valid: number;
+  _valid: number | false;
   _version: number;
   _completion: FormulaCompletion;
   _value: unknown;
@@ -11,7 +11,7 @@ export class Formula<T> extends Calc<T> {
 
   constructor(calculate: () => T) {
     super();
-    this._valid = 0;
+    this._valid = false;
     this._version = 0;
     this._completion = FormulaCompletion.Normal;
     this._value = null;
@@ -57,8 +57,11 @@ export class Formula<T> extends Calc<T> {
       return this._version;
     }
 
-    // Force a calculation if we haven’t run one before...
-    let recalculate = this._dependencies === null;
+    // Force a calculation if we know this formula is invalid. Either:
+    //
+    // 1. We haven’t evaluated the calculation yet.
+    // 2. A dependent invalidated us.
+    let recalculate = this._valid === false;
 
     // Recursively check all of our dependencies to make sure we are using the
     // latest version. If we are not using the latest version of a dependency
@@ -150,27 +153,52 @@ export class Formula<T> extends Calc<T> {
   }
 
   _addDependent(dependent: Calc<unknown>): void {
-    const wasListening = shouldListen(this);
+    const didListen = shouldListen(this);
     super._addDependent(dependent);
-    updateDependencyListeners(this, wasListening);
+    updateDependencyListeners(this, didListen);
   }
 
   _removeDependent(dependent: Calc<unknown>): void {
-    const wasListening = shouldListen(this);
+    const didListen = shouldListen(this);
     super._removeDependent(dependent);
-    updateDependencyListeners(this, wasListening);
+    updateDependencyListeners(this, didListen);
   }
 
   addListener(listener: () => void): void {
-    const wasListening = shouldListen(this);
+    const didListen = shouldListen(this);
     super.addListener(listener);
-    updateDependencyListeners(this, wasListening);
+    updateDependencyListeners(this, didListen);
   }
 
   removeListener(listener: () => void): void {
-    const wasListening = shouldListen(this);
+    const didListen = shouldListen(this);
     super.removeListener(listener);
-    updateDependencyListeners(this, wasListening);
+    updateDependencyListeners(this, didListen);
+  }
+
+  /**
+   * If our formula is in a valid state we will call all our listeners and
+   * invalidate the formula. We won’t call our listeners again until the formula
+   * is recalculated even if our dependencies keep changing.
+   *
+   * We currently keep listening to our dependencies even after invalidating and
+   * ignore the updates. We keep listening so that when we do finally
+   * recalculate we only need to add/remove listeners for the diff of changed
+   * dependencies (which may be none). Imagine the following situation:
+   *
+   * - We have 10 dependencies.
+   * - A dependency updates so `_callListeners()` is called.
+   * - We recalculate and keep the same 10 dependencies.
+   *
+   * If we removed our 10 listeners in `_callListeners()` then we would have to
+   * add all 10 listeners back when we recalculate. By not removing listeners we
+   * won’t need to do anything after recalculating.
+   */
+  _callListeners(): void {
+    if (this._valid !== false) {
+      this._valid = false;
+      super._callListeners();
+    }
   }
 }
 
@@ -206,23 +234,21 @@ function shouldListen(formula: Formula<unknown>): boolean {
 
 function updateDependencyListeners(
   formula: Formula<unknown>,
-  wasListening: boolean,
+  didListen: boolean,
 ): void {
   const willListen = shouldListen(formula);
 
-  if (willListen === true && wasListening === false) {
-    if (formula._dependencies === null) {
-      formula._getLatestVersion(); // TODO: Should we call this?
+  if (willListen === true && didListen === false) {
+    if (formula._dependencies !== null) {
+      formula._dependencies.forEach((_version, dependency) => {
+        dependency._addDependent(formula);
+      });
     }
-    formula._dependencies!.forEach((_version, dependency) => {
-      dependency._addDependent(formula);
-    });
-  } else if (willListen === false && wasListening === true) {
-    if (formula._dependencies === null) {
-      formula._getLatestVersion();
+  } else if (willListen === false && didListen === true) {
+    if (formula._dependencies !== null) {
+      formula._dependencies.forEach((_version, dependency) => {
+        dependency._removeDependent(formula);
+      });
     }
-    formula._dependencies!.forEach((_version, dependency) => {
-      dependency._removeDependent(formula);
-    });
   }
 }

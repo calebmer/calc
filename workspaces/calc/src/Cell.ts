@@ -2,7 +2,7 @@ import {
   unstable_scheduleCallback as scheduleCallback,
   unstable_getCurrentPriorityLevel as getCurrentPriorityLevel,
 } from 'scheduler';
-import {Calc, callListeners} from './Calc';
+import {Calc} from './Calc';
 import {currentFormulaDependencies} from './Formula';
 import {objectIs} from './objectIs';
 
@@ -30,7 +30,7 @@ export class Cell<T> extends Calc<T> {
 
     const priorityLevel = getCurrentPriorityLevel();
     scheduleCallback(priorityLevel, () => {
-      callListeners(this);
+      this._callListeners();
     });
   }
 

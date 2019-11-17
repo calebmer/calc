@@ -59,32 +59,34 @@ export abstract class Calc<T> {
       }
     }
   }
-}
 
-export function callListeners(calc: Calc<unknown>): void {
-  _callListeners(new Set(), calc);
-}
-
-function _callListeners(seen: Set<Calc<unknown>>, calc: Calc<unknown>): void {
-  seen.add(calc);
-
-  if (calc._listeners !== null) {
-    calc._listeners.forEach(listener => {
-      try {
-        listener();
-      } catch (error) {
-        setTimeout(() => {
-          throw error;
-        }, 0);
-      }
-    });
-  }
-
-  if (calc._dependents !== null) {
-    calc._dependents.forEach(dependent => {
-      if (seen.has(dependent) === false) {
-        _callListeners(seen, dependent);
-      }
-    });
+  /**
+   * Calls all of our calculation listeners and all the listeners of our
+   * dependent calculations.
+   *
+   * This also serves as an invalidation signal. If this function is called on
+   * your calculation you know that you must recalculate it.
+   *
+   * NOTE: If the same dependent appears twice in our dependency tree we must
+   * only call its listeners once!! Currently we depend on each dependent to
+   * implement this logic.
+   */
+  _callListeners(): void {
+    if (this._listeners !== null) {
+      this._listeners.forEach(listener => {
+        try {
+          listener();
+        } catch (error) {
+          setTimeout(() => {
+            throw error;
+          }, 0);
+        }
+      });
+    }
+    if (this._dependents !== null) {
+      this._dependents.forEach(dependent => {
+        dependent._callListeners();
+      });
+    }
   }
 }
