@@ -20,9 +20,12 @@ export class Formula<T> extends Calc<T> {
   }
 
   calc(): T {
-    const dependencies = getFormulaDependencies();
+    if (currentFormulaDependencies === null) {
+      throw new Error('Can only call `calc()` inside of a formula.');
+    }
+
     const version = this._getLatestVersion();
-    dependencies.set(this, version);
+    currentFormulaDependencies.set(this, version);
 
     if (this._completion === FormulaCompletion.Normal) {
       return this._value as T;
@@ -185,13 +188,6 @@ let currentFormulaTransaction: number | null = null;
 export type FormulaDependencies = Map<Calc<unknown>, number>;
 
 export let currentFormulaDependencies: FormulaDependencies | null = null;
-
-export function getFormulaDependencies(): FormulaDependencies {
-  if (currentFormulaDependencies === null) {
-    throw new Error('Can only call `calc()` inside of a formula.');
-  }
-  return currentFormulaDependencies;
-}
 
 function shouldListen(formula: Formula<unknown>): boolean {
   return formula._dependents !== null || formula._listeners !== null;

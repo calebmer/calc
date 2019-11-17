@@ -3,7 +3,7 @@ import {
   unstable_getCurrentPriorityLevel as getCurrentPriorityLevel,
 } from 'scheduler';
 import {Calc, callListeners} from './Calc';
-import {currentFormulaDependencies, getFormulaDependencies} from './Formula';
+import {currentFormulaDependencies} from './Formula';
 import {objectIs} from './objectIs';
 
 export class Cell<T> extends Calc<T> {
@@ -39,7 +39,12 @@ export class Cell<T> extends Calc<T> {
   }
 
   calc(): T {
-    getFormulaDependencies().set(this, this._version);
+    if (currentFormulaDependencies === null) {
+      throw new Error('Can only call `calc()` inside of a formula.');
+    }
+
+    currentFormulaDependencies.set(this, this._version);
+
     return this._value;
   }
 
