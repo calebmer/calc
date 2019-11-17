@@ -1,0 +1,13 @@
+# The `local` directory is completely unused so you can put whatever you want in
+# it. Useful as a scratchpad or a home for local test projects.
+local
+
+# Node.js
+node_modules
+
+# Yarn
+yarn-debug.log*
+yarn-error.log*
+
+# MacOS
+.DS_Store
