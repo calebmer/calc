@@ -1,13 +1,12 @@
 {
   "private": true,
-  "name": "calculator",
-  "version": "0.0.0",
+  "workspaces": [
+    "workspaces/*"
+  ],
   "dependencies": {
-    "scheduler": "^0.15.0"
-  },
-  "devDependencies": {
     "@types/jest": "^24.0.17",
     "jest": "^24.8.0",
+    "prettier": "^1.19.1",
     "ts-jest": "^24.0.2",
     "typescript": "^3.5.3"
   }

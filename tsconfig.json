@@ -3,7 +3,10 @@
     "noEmit": true,
     "target": "es2019",
     "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "isolatedModules": true,
     "strict": true,
-    "esModuleInterop": true
+    "forceConsistentCasingInFileNames": true
   }
 }
