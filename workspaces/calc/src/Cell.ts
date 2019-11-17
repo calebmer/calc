@@ -7,12 +7,11 @@ import {currentFormulaDependencies} from './Formula';
 import {objectIs} from './objectIs';
 
 export class Cell<T> extends Calc<T> {
-  _version: number;
+  _version: number = 0;
   _value: T;
 
   constructor(value: T) {
     super();
-    this._version = 0;
     this._value = value;
   }
 

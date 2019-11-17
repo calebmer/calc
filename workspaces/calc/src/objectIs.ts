@@ -1,5 +1,5 @@
 /**
- * Implementation of [Object.is][1] so that consumers don’t have to ship
+ * Implementation of [`Object.is`][1] so that consumers don’t have to ship
  * a polyfill.
  *
  * [1]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is

@@ -2,20 +2,15 @@ import {Calc} from './Calc';
 import {objectIs} from './objectIs';
 
 export class Formula<T> extends Calc<T> {
-  _valid: number | false;
-  _version: number;
-  _completion: FormulaCompletion;
-  _value: unknown;
-  _dependencies: FormulaDependencies | null;
+  _valid: number | false = false;
+  _version: number = 0;
+  _completion: FormulaCompletion = FormulaCompletion.Normal;
+  _value: unknown = null;
+  _dependencies: FormulaDependencies | null = null;
   readonly _calculate: () => T;
 
   constructor(calculate: () => T) {
     super();
-    this._valid = false;
-    this._version = 0;
-    this._completion = FormulaCompletion.Normal;
-    this._value = null;
-    this._dependencies = null;
     this._calculate = calculate;
   }
 

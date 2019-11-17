@@ -7,7 +7,7 @@ export abstract class Calc<T> {
    * This set should never be empty. Instead of an empty set this property will
    * be null.
    */
-  _dependents: Set<Calc<unknown>> | null;
+  _dependents: Set<Calc<unknown>> | null = null;
 
   /**
    * All of the direct user-code listeners of this calculation.
@@ -15,12 +15,7 @@ export abstract class Calc<T> {
    * This set should never be empty. Instead of an empty set this property will
    * be null.
    */
-  _listeners: Set<() => void> | null;
-
-  constructor() {
-    this._dependents = null;
-    this._listeners = null;
-  }
+  _listeners: Set<() => void> | null = null;
 
   abstract calc(): T;
 

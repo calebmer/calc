@@ -1,11 +1,8 @@
 {
   "name": "calc",
   "version": "0.0.0",
-  "license": "UNLICENSED",
+  "license": "TODO",
   "dependencies": {
     "scheduler": "^0.18.0"
-  },
-  "devDependencies": {
-    "@types/scheduler": "^0.16.1"
   }
 }
