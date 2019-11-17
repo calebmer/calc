@@ -44,10 +44,6 @@ export abstract class Calc<T> {
     }
   }
 
-  /**
-   *
-   * @param listener
-   */
   addListener(listener: () => void): void {
     if (this._listeners === null) {
       this._listeners = new Set();
