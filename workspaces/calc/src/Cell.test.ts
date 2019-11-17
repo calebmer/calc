@@ -1,8 +1,8 @@
 import * as SchedulerMock from 'scheduler/unstable_mock';
 jest.mock('scheduler', () => SchedulerMock);
 
-import {Cell} from '../Cell';
-import {Formula} from '../Formula';
+import {Cell} from './Cell';
+import {Formula} from './Formula';
 import {
   unstable_flushAll as flushAll,
   unstable_runWithPriority as runWithPriority,

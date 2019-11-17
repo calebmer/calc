@@ -1,8 +1,8 @@
 import * as SchedulerMock from 'scheduler/unstable_mock';
 jest.mock('scheduler', () => SchedulerMock);
 
-import {Formula} from '../Formula';
-import {Cell} from '../Cell';
+import {Formula} from './Formula';
+import {Cell} from './Cell';
 import {unstable_flushAll as flushAll} from 'scheduler/unstable_mock';
 
 test('`calc()` will throw outside a formula', () => {
