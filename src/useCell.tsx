@@ -6,12 +6,14 @@ import {scheduleMicrotask} from './schedule';
 export default function useCell<T>(cell: Cell<T>): T {
   const stabilizer = useContext(CellStabilizerContext);
 
-  const value = stabilizer.read(cell);
+  const value = stabilizer.readWithoutListening(cell);
 
   useEffect(() => {
-    stabilizer.listen(cell);
+    // TODO: Update in effect.
+
+    stabilizer.addListener(cell);
     return () => {
-      stabilizer.unlisten(cell);
+      stabilizer.removeListener(cell);
     };
   }, [cell]);
 
@@ -19,13 +21,15 @@ export default function useCell<T>(cell: Cell<T>): T {
 }
 
 export function CellStabilizer({children}: {children?: React.ReactNode}) {
-  const [values, setValues] = useState(initializeMap);
+  const [values, setValues] = useState(() => {
+    return new Map<Cell<unknown>, unknown>();
+  });
 
   const stabilizer: CellStabilizerContext = useMemo(() => {
     const referenceCounts = new Map<Cell<unknown>, number>();
     let hasScheduledUpdate = false;
 
-    function read<T>(cell: Cell<T>): T {
+    function readWithoutListening<T>(cell: Cell<T>): T {
       if (values.has(cell)) {
         return values.get(cell) as T;
       } else {
@@ -47,7 +51,7 @@ export function CellStabilizer({children}: {children?: React.ReactNode}) {
       }
     }
 
-    function listen(cell: Cell<unknown>) {
+    function addListener(cell: Cell<unknown>) {
       const referenceCount = referenceCounts.get(cell);
 
       if (referenceCount === undefined) {
@@ -58,7 +62,7 @@ export function CellStabilizer({children}: {children?: React.ReactNode}) {
       }
     }
 
-    function unlisten(cell: Cell<unknown>) {
+    function removeListener(cell: Cell<unknown>) {
       const referenceCount = referenceCounts.get(cell);
 
       if (referenceCount !== undefined) {
@@ -72,9 +76,9 @@ export function CellStabilizer({children}: {children?: React.ReactNode}) {
     }
 
     return {
-      read,
-      listen,
-      unlisten,
+      readWithoutListening,
+      addListener,
+      removeListener,
     };
   }, [values]);
 
@@ -86,9 +90,9 @@ export function CellStabilizer({children}: {children?: React.ReactNode}) {
 }
 
 type CellStabilizerContext = {
-  read<T>(cell: Cell<T>): T;
-  listen<T>(cell: Cell<T>): void;
-  unlisten(cell: Cell<unknown>): void;
+  readWithoutListening<T>(cell: Cell<T>): T;
+  addListener<T>(cell: Cell<T>): void;
+  removeListener(cell: Cell<unknown>): void;
 };
 
 const CellStabilizerContext = React.createContext<CellStabilizerContext>(
@@ -110,7 +114,7 @@ function createGlobalCellStabilizer(): CellStabilizerContext {
   }
 
   return {
-    read<T>(cell: Cell<T>): T {
+    readWithoutListening<T>(cell: Cell<T>): T {
       if (values.has(cell)) {
         return values.get(cell) as T;
       } else {
@@ -119,15 +123,11 @@ function createGlobalCellStabilizer(): CellStabilizerContext {
         return value;
       }
     },
-    listen(cell) {
+    addListener(cell) {
       cell.addListener(listener);
     },
-    unlisten(cell) {
+    removeListener(cell) {
       cell.removeListener(listener);
     },
   };
-}
-
-function initializeMap(): Map<Cell<unknown>, unknown> {
-  return new Map();
 }
