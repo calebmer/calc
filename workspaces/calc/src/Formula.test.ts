@@ -671,8 +671,6 @@ test('we don’t remove dependents until after we invalidate', () => {
   cell1.set(false);
   expect(addDependent).toHaveBeenCalledTimes(1);
   expect(removeDependent).toHaveBeenCalledTimes(0);
-  expect(addDependent).toHaveBeenCalledTimes(1);
-  expect(removeDependent).toHaveBeenCalledTimes(0);
   expect(formula.getWithoutListening()).toEqual(0);
   expect(addDependent).toHaveBeenCalledTimes(1);
   expect(removeDependent).toHaveBeenCalledTimes(1);
