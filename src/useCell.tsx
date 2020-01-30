@@ -1,19 +1,19 @@
 import React, {useState, useEffect, useContext, useMemo} from 'react';
-import invariant from './invariant';
-import {scheduleMicrotask} from './schedule';
+import {unstable_wrapCallback as wrapCallback} from 'scheduler';
 import Cell from './Cell';
+import {scheduleMicrotask} from './schedule';
 
 export default function useCell<T>(cell: Cell<T>): T {
   const stabilizer = useContext(CellStabilizerContext);
 
-  const [value, setValue] = useState(() => {
-    return stabilizer.readWithoutListening(cell);
-  });
+  const value = stabilizer.readWithoutListening(cell);
 
   useEffect(() => {
-    stabilizer.addListener(cell, setValue);
+    // TODO: Update in effect.
+
+    stabilizer.addListener(cell);
     return () => {
-      stabilizer.removeListener(cell, setValue);
+      stabilizer.removeListener(cell);
     };
   }, [cell]);
 
@@ -21,66 +21,66 @@ export default function useCell<T>(cell: Cell<T>): T {
 }
 
 export function CellStabilizer({children}: {children?: React.ReactNode}) {
-  const stabilizer: CellStabilizerContext = useMemo(() => {
-    type CellManager<T> = {
-      value: T;
-      updaters: Set<(value: T) => void>;
-      listener: (() => void) | null;
-    };
+  const [values, setValues] = useState(() => {
+    return new Map<Cell<unknown>, unknown>();
+  });
 
-    const managers = new Map<Cell<unknown>, CellManager<unknown>>();
+  const stabilizer: CellStabilizerContext = useMemo(() => {
+    const referenceCounts = new Map<Cell<unknown>, number>();
+    let hasScheduledUpdate = false;
 
     function readWithoutListening<T>(cell: Cell<T>): T {
-      let manager = managers.get(cell);
-
-      if (manager === undefined) {
-        manager = {
-          value: cell.readWithoutListening(),
-          updaters: new Set(),
-          listener: null,
-        };
-        managers.set(cell, manager);
+      if (values.has(cell)) {
+        return values.get(cell) as T;
+      } else {
+        const value = cell.readWithoutListening();
+        values.set(cell, value);
+        return value;
       }
-
-      return manager.value as T;
     }
 
-    function getExistingManager<T>(cell: Cell<T>): CellManager<T> {
-      const manager = managers.get(cell) as CellManager<T> | undefined;
-      invariant(manager);
-      return manager;
+    function listener() {
+      if (hasScheduledUpdate === false) {
+        hasScheduledUpdate = true;
+        scheduleMicrotask(
+          wrapCallback(() => {
+            hasScheduledUpdate = false;
+            setValues(new Map());
+          }),
+        );
+      }
     }
 
-    function addListener<T>(cell: Cell<T>, update: (value: T) => void) {
-      const manager = getExistingManager(cell);
+    function addListener(cell: Cell<unknown>) {
+      const referenceCount = referenceCounts.get(cell);
 
-      manager.updaters.add(update);
-
-      const value = cell.readWithoutListening();
-      if (!is(manager.value, value)) {
-        manager.value = value;
-        manager.updaters.forEach(update => update(value));
-      }
-
-      if (manager.listener === null) {
-        function listener() {
-          manager.value = value;
-          manager.updaters.forEach(update => update(value));
-        }
-
-        manager.listener = listener;
+      if (referenceCount === undefined) {
         cell.addListener(listener);
+        referenceCounts.set(cell, 1);
+      } else {
+        referenceCounts.set(cell, referenceCount + 1);
       }
     }
 
-    function removeListener<T>(cell: Cell<T>, update: (value: T) => void) {}
+    function removeListener(cell: Cell<unknown>) {
+      const referenceCount = referenceCounts.get(cell);
+
+      if (referenceCount !== undefined) {
+        if (referenceCount === 1) {
+          cell.removeListener(listener);
+          referenceCounts.delete(cell);
+        } else {
+          referenceCounts.set(cell, referenceCount - 1);
+        }
+      }
+    }
 
     return {
       readWithoutListening,
       addListener,
       removeListener,
     };
-  }, []);
+  }, [values]);
 
   return (
     <CellStabilizerContext.Provider value={stabilizer}>
@@ -91,8 +91,8 @@ export function CellStabilizer({children}: {children?: React.ReactNode}) {
 
 type CellStabilizerContext = {
   readWithoutListening<T>(cell: Cell<T>): T;
-  addListener<T>(cell: Cell<T>, setValue: (value: T) => void): void;
-  removeListener<T>(cell: Cell<T>, setValue: (value: T) => void): void;
+  addListener<T>(cell: Cell<T>): void;
+  removeListener(cell: Cell<unknown>): void;
 };
 
 const CellStabilizerContext = React.createContext<CellStabilizerContext>(
@@ -130,13 +130,4 @@ function createGlobalCellStabilizer(): CellStabilizerContext {
       cell.removeListener(listener);
     },
   };
-}
-
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
-function is(x: unknown, y: unknown) {
-  if (x === y) {
-    return x !== 0 || 1 / x === 1 / (y as any);
-  } else {
-    return x !== x && y !== y;
-  }
 }
