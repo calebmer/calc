@@ -130,7 +130,7 @@ export abstract class Calc<T> {
         try {
           listener();
         } catch (error) {
-          scheduleUncaughtException(error);
+          scheduleException(error);
         }
       });
     }
@@ -149,7 +149,7 @@ export abstract class Calc<T> {
  * Useful when user code throws an error that you want to report but you don’t
  * want to abort the currently running process.
  */
-function scheduleUncaughtException(error: unknown) {
+function scheduleException(error: unknown) {
   // Use `setTimeout()` so that the exception isn’t an unhandled promise
   // rejection. Technically using a promise microtask would throw the
   // error faster.
