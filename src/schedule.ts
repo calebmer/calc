@@ -1,3 +1,5 @@
+import {unstable_wrapCallback as wrapCallback} from 'scheduler';
+
 // TODO: document
 export function scheduleException(error: unknown) {
   setTimeout(() => {
@@ -8,6 +10,6 @@ export function scheduleException(error: unknown) {
 const microtaskPromise = Promise.resolve();
 
 // TODO: document
-export function scheduleMicrotask(action: () => void) {
-  microtaskPromise.then(action).catch(scheduleException);
+export function scheduleMicrotask(callback: () => void) {
+  microtaskPromise.then(wrapCallback(callback)).catch(scheduleException);
 }
