@@ -1,6 +1,6 @@
 import {Calc} from './Calc';
 import {currentFormulaDependencies} from './Formula';
-import {objectIs} from './objectIs';
+import {objectIs} from './helpers/objectIs';
 
 export class Cell<T> extends Calc<T> {
   _version: number = 0;

@@ -1,5 +1,5 @@
 import {Calc} from './Calc';
-import {objectIs} from './objectIs';
+import {objectIs} from './helpers/objectIs';
 
 export class Formula<T> extends Calc<T> {
   /**

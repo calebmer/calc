@@ -1,3 +1,5 @@
+import {scheduleException} from './helpers/scheduleException';
+
 /**
  * Some reactive value which may change over time. You may listen for changes
  * in the value. There are a few notable subclasses:
@@ -126,7 +128,7 @@ export abstract class Calc<T> {
    */
   _callListeners(): void {
     if (this._listeners !== null) {
-      this._listeners.forEach(listener => {
+      this._listeners.forEach((listener) => {
         try {
           listener();
         } catch (error) {
@@ -135,25 +137,9 @@ export abstract class Calc<T> {
       });
     }
     if (this._dependents !== null) {
-      this._dependents.forEach(dependent => {
+      this._dependents.forEach((dependent) => {
         dependent._callListeners();
       });
     }
   }
-}
-
-/**
- * Schedule an error to be thrown as soon as possible as an uncaught exception
- * in an empty event loop context.
- *
- * Useful when user code throws an error that you want to report but you don’t
- * want to abort the currently running process.
- */
-function scheduleException(error: unknown) {
-  // Use `setTimeout()` so that the exception isn’t an unhandled promise
-  // rejection. Technically using a promise microtask would throw the
-  // error faster.
-  setTimeout(() => {
-    throw error;
-  }, 0);
 }
