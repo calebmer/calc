@@ -1,5 +1,12 @@
 {
   "name": "todo",
   "version": "0.0.0",
-  "license": "TODO"
+  "license": "TODO",
+  "main": "./index.js",
+  "exports": {
+    "import": "./src/index.mjs",
+    "require": "./index.js"
+  },
+  "types": "./index.d.ts",
+  "module": "./src/index.mjs"
 }
