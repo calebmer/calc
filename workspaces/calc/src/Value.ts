@@ -1,3 +1,6 @@
+// TODO(calebmer): Maybe `Live.Value` should implement the only notify on change
+// since last read too?
+
 import {
   unstable_getCurrentPriorityLevel as getCurrentPriorityLevel,
   unstable_scheduleCallback as scheduleCallback,
