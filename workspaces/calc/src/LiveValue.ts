@@ -1,8 +1,8 @@
-import {Calc} from './Calc';
-import {currentFormulaDependencies} from './Formula';
+import {Live} from './Live';
+import {currentComputationDependencies} from './LiveComputation';
 import {objectIs} from './helpers/objectIs';
 
-export class Cell<T> extends Calc<T> {
+export class LiveValue<T> extends Live<T> {
   _version: number = 0;
   _value: T;
 
@@ -12,8 +12,10 @@ export class Cell<T> extends Calc<T> {
   }
 
   set(newValue: T): void {
-    if (currentFormulaDependencies !== null) {
-      throw new Error('Can not call `cell.set()` inside of a formula.');
+    if (currentComputationDependencies !== null) {
+      throw new Error(
+        'Can not call `value.set()` inside of a reactive context.',
+      );
     }
 
     if (objectIs(this._value, newValue) === true) {
@@ -30,12 +32,12 @@ export class Cell<T> extends Calc<T> {
     return this._value;
   }
 
-  calc(): T {
-    if (currentFormulaDependencies === null) {
-      throw new Error('Can only call `calc()` inside of a formula.');
+  live(): T {
+    if (currentComputationDependencies === null) {
+      throw new Error('Can only call `live()` inside of a reactive context.');
     }
 
-    currentFormulaDependencies.set(this, this._version);
+    currentComputationDependencies.set(this, this._version);
 
     return this._value;
   }
