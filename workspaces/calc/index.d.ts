@@ -23,7 +23,7 @@ declare class Value<T> extends Live<T> {
 
   set(value: T): void;
 
-  setImmediate(value: T): void;
+  setImmediately(value: T): void;
 }
 
 declare class Computation<T> extends Live<T> {

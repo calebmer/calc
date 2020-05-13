@@ -97,13 +97,13 @@ test('will recompute if a value changes when there are no listeners', () => {
   expect(computation.getWithoutListening()).toEqual(2);
   expect(computation.getWithoutListening()).toEqual(2);
   expect(compute).toHaveBeenCalledTimes(1);
-  value1.set(2);
+  value1.setImmediately(2);
   expect(compute).toHaveBeenCalledTimes(1);
   expect(computation.getWithoutListening()).toEqual(3);
   expect(computation.getWithoutListening()).toEqual(3);
   expect(computation.getWithoutListening()).toEqual(3);
   expect(compute).toHaveBeenCalledTimes(2);
-  value2.set(2);
+  value2.setImmediately(2);
   expect(compute).toHaveBeenCalledTimes(2);
   expect(computation.getWithoutListening()).toEqual(4);
   expect(computation.getWithoutListening()).toEqual(4);
@@ -119,15 +119,15 @@ test('skips updates for integer values that are the same', () => {
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(1);
   expect(compute).toHaveBeenCalledTimes(1);
-  value.set(2);
+  value.setImmediately(2);
   expect(compute).toHaveBeenCalledTimes(1);
   expect(computation.getWithoutListening()).toEqual(2);
   expect(compute).toHaveBeenCalledTimes(2);
-  value.set(2);
+  value.setImmediately(2);
   expect(compute).toHaveBeenCalledTimes(2);
   expect(computation.getWithoutListening()).toEqual(2);
   expect(compute).toHaveBeenCalledTimes(2);
-  value.set(3);
+  value.setImmediately(3);
   expect(compute).toHaveBeenCalledTimes(2);
   expect(computation.getWithoutListening()).toEqual(3);
   expect(compute).toHaveBeenCalledTimes(3);
@@ -144,15 +144,15 @@ test('skips updates for objects values that are the same', () => {
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toBe(object1);
   expect(compute).toHaveBeenCalledTimes(1);
-  value.set(object2);
+  value.setImmediately(object2);
   expect(compute).toHaveBeenCalledTimes(1);
   expect(computation.getWithoutListening()).toBe(object2);
   expect(compute).toHaveBeenCalledTimes(2);
-  value.set(object2);
+  value.setImmediately(object2);
   expect(compute).toHaveBeenCalledTimes(2);
   expect(computation.getWithoutListening()).toBe(object2);
   expect(compute).toHaveBeenCalledTimes(2);
-  value.set(object3);
+  value.setImmediately(object3);
   expect(compute).toHaveBeenCalledTimes(2);
   expect(computation.getWithoutListening()).toBe(object3);
   expect(compute).toHaveBeenCalledTimes(3);
@@ -166,15 +166,15 @@ test('skips updates for NaN values that are the same', () => {
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(1);
   expect(compute).toHaveBeenCalledTimes(1);
-  value.set(NaN);
+  value.setImmediately(NaN);
   expect(compute).toHaveBeenCalledTimes(1);
   expect(computation.getWithoutListening()).toEqual(NaN);
   expect(compute).toHaveBeenCalledTimes(2);
-  value.set(NaN);
+  value.setImmediately(NaN);
   expect(compute).toHaveBeenCalledTimes(2);
   expect(computation.getWithoutListening()).toEqual(NaN);
   expect(compute).toHaveBeenCalledTimes(2);
-  value.set(3);
+  value.setImmediately(3);
   expect(compute).toHaveBeenCalledTimes(2);
   expect(computation.getWithoutListening()).toEqual(3);
   expect(compute).toHaveBeenCalledTimes(3);
@@ -192,7 +192,7 @@ test('will update when a sub-computation changes', () => {
   expect(computation2.getWithoutListening()).toEqual(1);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
-  value.set(2);
+  value.setImmediately(2);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
   expect(computation2.getWithoutListening()).toEqual(2);
@@ -213,8 +213,8 @@ test('skips updates for computations that are the same when the root is recomput
   expect(computation2.getWithoutListening()).toEqual(3);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
-  value1.set(2);
-  value2.set(1);
+  value1.setImmediately(2);
+  value2.setImmediately(1);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
   expect(computation2.getWithoutListening()).toEqual(3);
@@ -244,8 +244,8 @@ test('skips update for computations that throw and are the same when the root is
   expect(computation2.getWithoutListening()).toEqual(3);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
-  value1.set(2);
-  value2.set(1);
+  value1.setImmediately(2);
+  value2.setImmediately(1);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
   expect(computation2.getWithoutListening()).toEqual(3);
@@ -266,8 +266,8 @@ test('skips update for computations that are the same when the sub-computation i
   expect(computation2.getWithoutListening()).toEqual(3);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
-  value1.set(2);
-  value2.set(1);
+  value1.setImmediately(2);
+  value2.setImmediately(1);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
   expect(computation1.getWithoutListening()).toEqual(3);
@@ -298,8 +298,8 @@ test('skips update for computations that throw and are the same when the sub-com
   expect(computation2.getWithoutListening()).toEqual(3);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
-  value1.set(2);
-  value2.set(1);
+  value1.setImmediately(2);
+  value2.setImmediately(1);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
   expect(() => computation1.getWithoutListening()).toThrow();
@@ -335,9 +335,9 @@ test('a listener will never be called when dependencies update until the computa
 
   computation.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
-  value1.set(2);
+  value1.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(0);
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(0);
 });
 
@@ -350,9 +350,9 @@ test('a listener will not be called when a dependency of an invalid computation 
   computation.getWithoutListening();
   computation.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
-  value1.set(2);
+  value1.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(1);
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
@@ -365,10 +365,10 @@ test('a listener will be called when a dependency updates', () => {
   computation.getWithoutListening();
   computation.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
-  value1.set(2);
+  value1.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(1);
   computation.getWithoutListening();
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -381,9 +381,9 @@ test('a listener will never be called when a dependency of a dependency updates 
 
   computation2.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
-  value1.set(2);
+  value1.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(0);
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(0);
 });
 
@@ -397,9 +397,9 @@ test('a listener will not be called when a dependency of a dependency of an inva
   computation2.getWithoutListening();
   computation2.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
-  value1.set(2);
+  value1.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(1);
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
@@ -413,10 +413,10 @@ test('a listener will be called when a dependency of a dependency updates', () =
   computation2.getWithoutListening();
   computation2.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
-  value1.set(2);
+  value1.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(1);
   computation2.getWithoutListening();
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -431,12 +431,12 @@ test('a listener will not be called when a removed dependency updates and the co
   computation.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   computation.getWithoutListening();
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(1);
   computation.getWithoutListening();
-  value1.set(false);
+  value1.setImmediately(false);
   expect(listener).toHaveBeenCalledTimes(2);
-  value2.set(3);
+  value2.setImmediately(3);
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -451,13 +451,13 @@ test('a listener will not be called when a removed dependency updates', () => {
   computation.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   computation.getWithoutListening();
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(1);
   computation.getWithoutListening();
-  value1.set(false);
+  value1.setImmediately(false);
   expect(listener).toHaveBeenCalledTimes(2);
   computation.getWithoutListening();
-  value2.set(3);
+  value2.setImmediately(3);
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -472,13 +472,13 @@ test('a listener will not be called when a removed dependency updates after a re
   computation.getWithoutListening();
   computation.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(1);
   expect(computation.getWithoutListening()).toEqual(2);
-  value1.set(false);
+  value1.setImmediately(false);
   expect(computation.getWithoutListening()).toEqual(0);
   expect(listener).toHaveBeenCalledTimes(2);
-  value2.set(3);
+  value2.setImmediately(3);
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -493,12 +493,12 @@ test('a listener will not be called when an added dependency updates and the com
   computation.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   computation.getWithoutListening();
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(0);
   computation.getWithoutListening();
-  value1.set(true);
+  value1.setImmediately(true);
   expect(listener).toHaveBeenCalledTimes(1);
-  value2.set(3);
+  value2.setImmediately(3);
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
@@ -513,13 +513,13 @@ test('a listener will be called when an added dependency updates', () => {
   computation.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   computation.getWithoutListening();
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(0);
   computation.getWithoutListening();
-  value1.set(true);
+  value1.setImmediately(true);
   expect(listener).toHaveBeenCalledTimes(1);
   computation.getWithoutListening();
-  value2.set(3);
+  value2.setImmediately(3);
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -534,13 +534,13 @@ test('a listener will be called when an added dependency updates after a recompu
   computation.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   computation.getWithoutListening();
-  value2.set(2);
+  value2.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(0);
-  value1.set(true);
+  value1.setImmediately(true);
   expect(computation.getWithoutListening()).toEqual(2);
   expect(listener).toHaveBeenCalledTimes(1);
   computation.getWithoutListening();
-  value2.set(3);
+  value2.setImmediately(3);
   expect(listener).toHaveBeenCalledTimes(2);
 });
 
@@ -550,9 +550,9 @@ test('updates can be synchronously observed', () => {
   const computation = new Computation(() => value1.live() + value2.live());
 
   expect(computation.getWithoutListening()).toEqual(2);
-  value1.set(2);
+  value1.setImmediately(2);
   expect(computation.getWithoutListening()).toEqual(3);
-  value2.set(3);
+  value2.setImmediately(3);
   expect(computation.getWithoutListening()).toEqual(5);
 });
 
@@ -562,9 +562,9 @@ test('updates can be asynchronously observed', () => {
   const computation = new Computation(() => value1.live() + value2.live());
 
   expect(computation.getWithoutListening()).toEqual(2);
-  value1.set(2);
+  value1.setImmediately(2);
   expect(computation.getWithoutListening()).toEqual(3);
-  value2.set(3);
+  value2.setImmediately(3);
   expect(computation.getWithoutListening()).toEqual(5);
 });
 
@@ -576,10 +576,10 @@ test('won’t recompute when dependencies change if there are no listeners', () 
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(2);
   expect(compute).toHaveBeenCalledTimes(1);
-  value.set(2);
+  value.setImmediately(2);
   expect(compute).toHaveBeenCalledTimes(1);
   expect(compute).toHaveBeenCalledTimes(1);
-  value.set(3);
+  value.setImmediately(3);
   expect(compute).toHaveBeenCalledTimes(1);
   expect(compute).toHaveBeenCalledTimes(1);
   expect(computation.getWithoutListening()).toEqual(4);
@@ -595,10 +595,10 @@ test('won’t recompute when dependencies change', () => {
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(2);
   expect(compute).toHaveBeenCalledTimes(1);
-  value.set(2);
+  value.setImmediately(2);
   expect(compute).toHaveBeenCalledTimes(1);
   expect(compute).toHaveBeenCalledTimes(1);
-  value.set(3);
+  value.setImmediately(3);
   expect(compute).toHaveBeenCalledTimes(1);
   expect(compute).toHaveBeenCalledTimes(1);
   expect(computation.getWithoutListening()).toEqual(4);
@@ -618,8 +618,8 @@ test('won’t recompute a dependency that has been removed', () => {
   expect(computation2.getWithoutListening()).toEqual(3);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
-  value2.set(2);
-  value1.set(false);
+  value2.setImmediately(2);
+  value1.setImmediately(false);
   expect(computation2.getWithoutListening()).toEqual(0);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(2);
@@ -639,8 +639,8 @@ test('won’t recompute a dependency that has been removed when there are listen
   expect(computation2.getWithoutListening()).toEqual(3);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(1);
-  value2.set(2);
-  value1.set(false);
+  value2.setImmediately(2);
+  value1.setImmediately(false);
   expect(computation2.getWithoutListening()).toEqual(0);
   expect(compute1).toHaveBeenCalledTimes(1);
   expect(compute2).toHaveBeenCalledTimes(2);
@@ -657,7 +657,7 @@ test('won’t call the listener twice if a dependency is reused', () => {
   computation2.addListener(listener);
   expect(listener).toHaveBeenCalledTimes(0);
   computation2.getWithoutListening();
-  value.set(2);
+  value.setImmediately(2);
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
@@ -684,7 +684,7 @@ test('we don’t remove dependents until after we invalidate', () => {
   computation.addListener(listener);
   expect(addDependent).toHaveBeenCalledTimes(1);
   expect(removeDependent).toHaveBeenCalledTimes(0);
-  value1.set(false);
+  value1.setImmediately(false);
   expect(addDependent).toHaveBeenCalledTimes(1);
   expect(removeDependent).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(0);
