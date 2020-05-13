@@ -1,8 +1,8 @@
-import {Live} from './Live';
-import {currentComputationDependencies} from './LiveComputation';
+import Live from './Live';
+import {currentComputationDependencies} from './Computation';
 import {objectIs} from './helpers/objectIs';
 
-export class LiveValue<T> extends Live<T> {
+export default class Value<T> extends Live<T> {
   _version: number = 0;
   _value: T;
 

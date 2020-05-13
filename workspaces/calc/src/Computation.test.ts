@@ -1,15 +1,15 @@
-import {LiveComputation} from './LiveComputation';
-import {LiveValue} from './LiveValue';
+import Computation from './Computation';
+import Value from './Value';
 
 test('`live()` will throw outside a computation', () => {
-  const computation = new LiveComputation(() => 1);
+  const computation = new Computation(() => 1);
 
   expect(() => computation.live()).toThrow();
 });
 
 test('`live()` will throw outside a computation before computing', () => {
   const compute = jest.fn(() => 1);
-  const computation = new LiveComputation(compute);
+  const computation = new Computation(compute);
 
   expect(compute).toBeCalledTimes(0);
   expect(() => computation.live()).toThrow();
@@ -17,8 +17,8 @@ test('`live()` will throw outside a computation before computing', () => {
 });
 
 test('get the result of a computation', () => {
-  const computation1 = new LiveComputation(() => 1);
-  const computation2 = new LiveComputation(() => 2);
+  const computation1 = new Computation(() => 1);
+  const computation2 = new Computation(() => 2);
 
   expect(computation1.getWithoutListening()).toEqual(1);
   expect(computation2.getWithoutListening()).toEqual(2);
@@ -26,7 +26,7 @@ test('get the result of a computation', () => {
 
 test('get the result of a throwing computation', () => {
   const error = new Error('test');
-  const computation = new LiveComputation(() => {
+  const computation = new Computation(() => {
     throw error;
   });
 
@@ -34,7 +34,7 @@ test('get the result of a throwing computation', () => {
 });
 
 test('get the result of a computation multiple times', () => {
-  const computation = new LiveComputation(() => 42);
+  const computation = new Computation(() => 42);
 
   expect(computation.getWithoutListening()).toEqual(42);
   expect(computation.getWithoutListening()).toEqual(42);
@@ -43,7 +43,7 @@ test('get the result of a computation multiple times', () => {
 
 test('get the result of a throwing computation multiple times', () => {
   const error = new Error('test');
-  const computation = new LiveComputation(() => {
+  const computation = new Computation(() => {
     throw error;
   });
 
@@ -54,7 +54,7 @@ test('get the result of a throwing computation multiple times', () => {
 
 test('will run a computation lazily', () => {
   const compute = jest.fn(() => 42);
-  const computation = new LiveComputation(compute);
+  const computation = new Computation(compute);
 
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(42);
@@ -63,7 +63,7 @@ test('will run a computation lazily', () => {
 
 test('will only run a computation once', () => {
   const compute = jest.fn(() => 42);
-  const computation = new LiveComputation(compute);
+  const computation = new Computation(compute);
 
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(42);
@@ -77,7 +77,7 @@ test('will only run a throwing computation once', () => {
   const compute = jest.fn(() => {
     throw error;
   });
-  const computation = new LiveComputation(compute);
+  const computation = new Computation(compute);
 
   expect(compute).toHaveBeenCalledTimes(0);
   expect(() => computation.getWithoutListening()).toThrow(error);
@@ -87,10 +87,10 @@ test('will only run a throwing computation once', () => {
 });
 
 test('will recompute if a value changes when there are no listeners', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(1);
+  const value1 = new Value(1);
+  const value2 = new Value(1);
   const compute = jest.fn(() => value1.live() + value2.live());
-  const computation = new LiveComputation(compute);
+  const computation = new Computation(compute);
 
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(2);
@@ -112,9 +112,9 @@ test('will recompute if a value changes when there are no listeners', () => {
 });
 
 test('skips updates for integer values that are the same', () => {
-  const value = new LiveValue(1);
+  const value = new Value(1);
   const compute = jest.fn(() => value.live());
-  const computation = new LiveComputation(compute);
+  const computation = new Computation(compute);
 
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(1);
@@ -137,9 +137,9 @@ test('skips updates for objects values that are the same', () => {
   const object1 = {};
   const object2 = {};
   const object3 = {};
-  const value = new LiveValue(object1);
+  const value = new Value(object1);
   const compute = jest.fn(() => value.live());
-  const computation = new LiveComputation(compute);
+  const computation = new Computation(compute);
 
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toBe(object1);
@@ -159,9 +159,9 @@ test('skips updates for objects values that are the same', () => {
 });
 
 test('skips updates for NaN values that are the same', () => {
-  const value = new LiveValue(1);
+  const value = new Value(1);
   const compute = jest.fn(() => value.live());
-  const computation = new LiveComputation(compute);
+  const computation = new Computation(compute);
 
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(1);
@@ -181,11 +181,11 @@ test('skips updates for NaN values that are the same', () => {
 });
 
 test('will update when a sub-computation changes', () => {
-  const value = new LiveValue(1);
+  const value = new Value(1);
   const compute1 = jest.fn(() => value.live());
-  const computation1 = new LiveComputation(compute1);
+  const computation1 = new Computation(compute1);
   const compute2 = jest.fn(() => computation1.live());
-  const computation2 = new LiveComputation(compute2);
+  const computation2 = new Computation(compute2);
 
   expect(compute1).toHaveBeenCalledTimes(0);
   expect(compute2).toHaveBeenCalledTimes(0);
@@ -201,12 +201,12 @@ test('will update when a sub-computation changes', () => {
 });
 
 test('skips updates for computations that are the same when the root is recomputed', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(2);
+  const value1 = new Value(1);
+  const value2 = new Value(2);
   const compute1 = jest.fn(() => value1.live() + value2.live());
-  const computation1 = new LiveComputation(compute1);
+  const computation1 = new Computation(compute1);
   const compute2 = jest.fn(() => computation1.live());
-  const computation2 = new LiveComputation(compute2);
+  const computation2 = new Computation(compute2);
 
   expect(compute1).toHaveBeenCalledTimes(0);
   expect(compute2).toHaveBeenCalledTimes(0);
@@ -223,12 +223,12 @@ test('skips updates for computations that are the same when the root is recomput
 });
 
 test('skips update for computations that throw and are the same when the root is recomputed', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(2);
+  const value1 = new Value(1);
+  const value2 = new Value(2);
   const compute1 = jest.fn(() => {
     throw value1.live() + value2.live();
   });
-  const computation1 = new LiveComputation(compute1);
+  const computation1 = new Computation(compute1);
   const compute2 = jest.fn(() => {
     try {
       computation1.live();
@@ -237,7 +237,7 @@ test('skips update for computations that throw and are the same when the root is
       return error;
     }
   });
-  const computation2 = new LiveComputation(compute2);
+  const computation2 = new Computation(compute2);
 
   expect(compute1).toHaveBeenCalledTimes(0);
   expect(compute2).toHaveBeenCalledTimes(0);
@@ -254,12 +254,12 @@ test('skips update for computations that throw and are the same when the root is
 });
 
 test('skips update for computations that are the same when the sub-computation is recomputed first', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(2);
+  const value1 = new Value(1);
+  const value2 = new Value(2);
   const compute1 = jest.fn(() => value1.live() + value2.live());
-  const computation1 = new LiveComputation(compute1);
+  const computation1 = new Computation(compute1);
   const compute2 = jest.fn(() => computation1.live());
-  const computation2 = new LiveComputation(compute2);
+  const computation2 = new Computation(compute2);
 
   expect(compute1).toHaveBeenCalledTimes(0);
   expect(compute2).toHaveBeenCalledTimes(0);
@@ -277,12 +277,12 @@ test('skips update for computations that are the same when the sub-computation i
 });
 
 test('skips update for computations that throw and are the same when the sub-computation is recomputed first', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(2);
+  const value1 = new Value(1);
+  const value2 = new Value(2);
   const compute1 = jest.fn(() => {
     throw value1.live() + value2.live();
   });
-  const computation1 = new LiveComputation(compute1);
+  const computation1 = new Computation(compute1);
   const compute2 = jest.fn(() => {
     try {
       computation1.live();
@@ -291,7 +291,7 @@ test('skips update for computations that throw and are the same when the sub-com
       return error;
     }
   });
-  const computation2 = new LiveComputation(compute2);
+  const computation2 = new Computation(compute2);
 
   expect(compute1).toHaveBeenCalledTimes(0);
   expect(compute2).toHaveBeenCalledTimes(0);
@@ -309,11 +309,11 @@ test('skips update for computations that throw and are the same when the sub-com
 });
 
 test('only recursively calls `_getLatestVersion()` once per transaction', () => {
-  const value1 = new LiveValue(1);
-  const computation1 = new LiveComputation(() => value1.live());
+  const value1 = new Value(1);
+  const computation1 = new Computation(() => value1.live());
   computation1._getLatestVersion = jest.fn(computation1._getLatestVersion);
-  const computation2 = new LiveComputation(() => computation1.live());
-  const computation3 = new LiveComputation(
+  const computation2 = new Computation(() => computation1.live());
+  const computation3 = new Computation(
     () =>
       computation2.live() +
       computation2.live() +
@@ -328,9 +328,9 @@ test('only recursively calls `_getLatestVersion()` once per transaction', () => 
 });
 
 test('a listener will never be called when dependencies update until the computation is evaluated', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() => value1.live() + value2.live());
+  const value1 = new Value(1);
+  const value2 = new Value(1);
+  const computation = new Computation(() => value1.live() + value2.live());
   const listener = jest.fn(() => {});
 
   computation.addListener(listener);
@@ -342,9 +342,9 @@ test('a listener will never be called when dependencies update until the computa
 });
 
 test('a listener will not be called when a dependency of an invalid computation updates', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() => value1.live() + value2.live());
+  const value1 = new Value(1);
+  const value2 = new Value(1);
+  const computation = new Computation(() => value1.live() + value2.live());
   const listener = jest.fn(() => {});
 
   computation.getWithoutListening();
@@ -357,9 +357,9 @@ test('a listener will not be called when a dependency of an invalid computation 
 });
 
 test('a listener will be called when a dependency updates', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() => value1.live() + value2.live());
+  const value1 = new Value(1);
+  const value2 = new Value(1);
+  const computation = new Computation(() => value1.live() + value2.live());
   const listener = jest.fn(() => {});
 
   computation.getWithoutListening();
@@ -373,10 +373,10 @@ test('a listener will be called when a dependency updates', () => {
 });
 
 test('a listener will never be called when a dependency of a dependency updates until the computation is evaluated', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(1);
-  const computation1 = new LiveComputation(() => value1.live() + value2.live());
-  const computation2 = new LiveComputation(() => computation1.live());
+  const value1 = new Value(1);
+  const value2 = new Value(1);
+  const computation1 = new Computation(() => value1.live() + value2.live());
+  const computation2 = new Computation(() => computation1.live());
   const listener = jest.fn(() => {});
 
   computation2.addListener(listener);
@@ -388,10 +388,10 @@ test('a listener will never be called when a dependency of a dependency updates 
 });
 
 test('a listener will not be called when a dependency of a dependency of an invalid computation updates', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(1);
-  const computation1 = new LiveComputation(() => value1.live() + value2.live());
-  const computation2 = new LiveComputation(() => computation1.live());
+  const value1 = new Value(1);
+  const value2 = new Value(1);
+  const computation1 = new Computation(() => value1.live() + value2.live());
+  const computation2 = new Computation(() => computation1.live());
   const listener = jest.fn(() => {});
 
   computation2.getWithoutListening();
@@ -404,10 +404,10 @@ test('a listener will not be called when a dependency of a dependency of an inva
 });
 
 test('a listener will be called when a dependency of a dependency updates', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(1);
-  const computation1 = new LiveComputation(() => value1.live() + value2.live());
-  const computation2 = new LiveComputation(() => computation1.live());
+  const value1 = new Value(1);
+  const value2 = new Value(1);
+  const computation1 = new Computation(() => value1.live() + value2.live());
+  const computation2 = new Computation(() => computation1.live());
   const listener = jest.fn(() => {});
 
   computation2.getWithoutListening();
@@ -421,9 +421,9 @@ test('a listener will be called when a dependency of a dependency updates', () =
 });
 
 test('a listener will not be called when a removed dependency updates and the computation is invalid', () => {
-  const value1 = new LiveValue(true);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() =>
+  const value1 = new Value(true);
+  const value2 = new Value(1);
+  const computation = new Computation(() =>
     value1.live() ? value2.live() : 0,
   );
   const listener = jest.fn(() => {});
@@ -441,9 +441,9 @@ test('a listener will not be called when a removed dependency updates and the co
 });
 
 test('a listener will not be called when a removed dependency updates', () => {
-  const value1 = new LiveValue(true);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() =>
+  const value1 = new Value(true);
+  const value2 = new Value(1);
+  const computation = new Computation(() =>
     value1.live() ? value2.live() : 0,
   );
   const listener = jest.fn(() => {});
@@ -462,9 +462,9 @@ test('a listener will not be called when a removed dependency updates', () => {
 });
 
 test('a listener will not be called when a removed dependency updates after a recomputation', () => {
-  const value1 = new LiveValue(true);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() =>
+  const value1 = new Value(true);
+  const value2 = new Value(1);
+  const computation = new Computation(() =>
     value1.live() ? value2.live() : 0,
   );
   const listener = jest.fn(() => {});
@@ -483,9 +483,9 @@ test('a listener will not be called when a removed dependency updates after a re
 });
 
 test('a listener will not be called when an added dependency updates and the computation is invalid', () => {
-  const value1 = new LiveValue(false);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() =>
+  const value1 = new Value(false);
+  const value2 = new Value(1);
+  const computation = new Computation(() =>
     value1.live() ? value2.live() : 0,
   );
   const listener = jest.fn(() => {});
@@ -503,9 +503,9 @@ test('a listener will not be called when an added dependency updates and the com
 });
 
 test('a listener will be called when an added dependency updates', () => {
-  const value1 = new LiveValue(false);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() =>
+  const value1 = new Value(false);
+  const value2 = new Value(1);
+  const computation = new Computation(() =>
     value1.live() ? value2.live() : 0,
   );
   const listener = jest.fn(() => {});
@@ -524,9 +524,9 @@ test('a listener will be called when an added dependency updates', () => {
 });
 
 test('a listener will be called when an added dependency updates after a recomputation', () => {
-  const value1 = new LiveValue(false);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() =>
+  const value1 = new Value(false);
+  const value2 = new Value(1);
+  const computation = new Computation(() =>
     value1.live() ? value2.live() : 0,
   );
   const listener = jest.fn(() => {});
@@ -545,9 +545,9 @@ test('a listener will be called when an added dependency updates after a recompu
 });
 
 test('updates can be synchronously observed', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() => value1.live() + value2.live());
+  const value1 = new Value(1);
+  const value2 = new Value(1);
+  const computation = new Computation(() => value1.live() + value2.live());
 
   expect(computation.getWithoutListening()).toEqual(2);
   value1.set(2);
@@ -557,9 +557,9 @@ test('updates can be synchronously observed', () => {
 });
 
 test('updates can be asynchronously observed', () => {
-  const value1 = new LiveValue(1);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() => value1.live() + value2.live());
+  const value1 = new Value(1);
+  const value2 = new Value(1);
+  const computation = new Computation(() => value1.live() + value2.live());
 
   expect(computation.getWithoutListening()).toEqual(2);
   value1.set(2);
@@ -569,9 +569,9 @@ test('updates can be asynchronously observed', () => {
 });
 
 test('won’t recompute when dependencies change if there are no listeners', () => {
-  const value = new LiveValue(1);
+  const value = new Value(1);
   const compute = jest.fn(() => value.live() + 1);
-  const computation = new LiveComputation(compute);
+  const computation = new Computation(compute);
 
   expect(compute).toHaveBeenCalledTimes(0);
   expect(computation.getWithoutListening()).toEqual(2);
@@ -587,9 +587,9 @@ test('won’t recompute when dependencies change if there are no listeners', () 
 });
 
 test('won’t recompute when dependencies change', () => {
-  const value = new LiveValue(1);
+  const value = new Value(1);
   const compute = jest.fn(() => value.live() + 1);
-  const computation = new LiveComputation(compute);
+  const computation = new Computation(compute);
 
   computation.addListener(() => {});
   expect(compute).toHaveBeenCalledTimes(0);
@@ -606,12 +606,12 @@ test('won’t recompute when dependencies change', () => {
 });
 
 test('won’t recompute a dependency that has been removed', () => {
-  const value1 = new LiveValue(true);
-  const value2 = new LiveValue(1);
+  const value1 = new Value(true);
+  const value2 = new Value(1);
   const compute1 = jest.fn(() => value2.live() + 1);
-  const computation1 = new LiveComputation(compute1);
+  const computation1 = new Computation(compute1);
   const compute2 = jest.fn(() => (value1.live() ? computation1.live() + 1 : 0));
-  const computation2 = new LiveComputation(compute2);
+  const computation2 = new Computation(compute2);
 
   expect(compute1).toHaveBeenCalledTimes(0);
   expect(compute2).toHaveBeenCalledTimes(0);
@@ -626,12 +626,12 @@ test('won’t recompute a dependency that has been removed', () => {
 });
 
 test('won’t recompute a dependency that has been removed when there are listeners', () => {
-  const value1 = new LiveValue(true);
-  const value2 = new LiveValue(1);
+  const value1 = new Value(true);
+  const value2 = new Value(1);
   const compute1 = jest.fn(() => value2.live() + 1);
-  const computation1 = new LiveComputation(compute1);
+  const computation1 = new Computation(compute1);
   const compute2 = jest.fn(() => (value1.live() ? computation1.live() + 1 : 0));
-  const computation2 = new LiveComputation(compute2);
+  const computation2 = new Computation(compute2);
 
   computation2.addListener(() => {});
   expect(compute1).toHaveBeenCalledTimes(0);
@@ -647,9 +647,9 @@ test('won’t recompute a dependency that has been removed when there are listen
 });
 
 test('won’t call the listener twice if a dependency is reused', () => {
-  const value = new LiveValue(1);
-  const computation1 = new LiveComputation(() => value.live() * 1);
-  const computation2 = new LiveComputation(
+  const value = new Value(1);
+  const computation1 = new Computation(() => value.live() * 1);
+  const computation2 = new Computation(
     () => value.live() + computation1.live(),
   );
   const listener = jest.fn(() => {});
@@ -665,9 +665,9 @@ test('won’t call the listener twice if a dependency is reused', () => {
 // implementation detail tests, but this test validates an important performance
 // property which is not visible to the user.
 test('we don’t remove dependents until after we invalidate', () => {
-  const value1 = new LiveValue(true);
-  const value2 = new LiveValue(1);
-  const computation = new LiveComputation(() =>
+  const value1 = new Value(true);
+  const value2 = new Value(1);
+  const computation = new Computation(() =>
     value1.live() ? value2.live() : 0,
   );
 

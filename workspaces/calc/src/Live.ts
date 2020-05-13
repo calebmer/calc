@@ -11,7 +11,7 @@ import {scheduleException} from './helpers/scheduleException';
  *   dependencies. The computation will change when one of its `Live`
  *   dependencies change.
  */
-export abstract class Live<T> {
+export default abstract class Live<T> {
   /**
    * Some of the dependents of this live value. A dependent only registers
    * itself if it has a listener. Therefore for all dependents the following is

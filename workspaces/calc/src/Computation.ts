@@ -1,7 +1,7 @@
-import {Live} from './Live';
+import Live from './Live';
 import {objectIs} from './helpers/objectIs';
 
-export class LiveComputation<T> extends Live<T> {
+export default class Computation<T> extends Live<T> {
   /**
    * Is the current computation value valid? If false then we will always
    * recompute the value. The computation will be in an invalid state when:
@@ -299,12 +299,12 @@ let currentComputationTransaction: number | null = null;
 
 let nextComputationTransaction = 1;
 
-function shouldListen(computation: LiveComputation<unknown>): boolean {
+function shouldListen(computation: Computation<unknown>): boolean {
   return computation._dependents !== null || computation._listeners !== null;
 }
 
 function updateDependencyListeners(
-  computation: LiveComputation<unknown>,
+  computation: Computation<unknown>,
   didListen: boolean,
 ): void {
   const willListen = shouldListen(computation);
