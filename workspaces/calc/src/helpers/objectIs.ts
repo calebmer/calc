@@ -4,7 +4,7 @@
  *
  * [1]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
  */
-export const objectIs =
+const objectIs =
   Object.is ||
   ((x: any, y: any) => {
     if (x === y) {
@@ -13,3 +13,5 @@ export const objectIs =
       return x !== x && y !== y;
     }
   });
+
+export default objectIs;

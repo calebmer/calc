@@ -1,5 +1,5 @@
 import Live from './Live';
-import {objectIs} from './helpers/objectIs';
+import objectIs from './helpers/objectIs';
 
 export default class Computation<T> extends Live<T> {
   /**
@@ -26,9 +26,9 @@ export default class Computation<T> extends Live<T> {
   _valid: number | false = false;
 
   /**
-   * What is the current version of our computation? Notably, current does not
-   * mean latest. For every dependency we will store the current version of that
-   * dependency when we evaluated.
+   * A monotonically increasing version number for our formula value. For every
+   * dependency we will store the current version of that dependency when
+   * we evaluated.
    *
    * The version will not change if we recompute and the value is the exact
    * same as determined by `Object.is`.
@@ -72,7 +72,7 @@ export default class Computation<T> extends Live<T> {
 
   live(): T {
     if (currentComputationDependencies === null) {
-      throw new Error('Can only call `live()` inside of a reactive context.');
+      throw new Error('Can only call `live()` inside of a reactive context');
     }
 
     const version = this._getLatestVersion();
@@ -143,6 +143,8 @@ export default class Computation<T> extends Live<T> {
       let lastComputationDependencies = currentComputationDependencies;
       currentComputationDependencies = new Map();
 
+      // Actually recompute! Mathematically speaking the result of a JavaScript
+      // function is either a value or an exception, so handle both cases.
       let completion: Completion;
       let value: unknown;
       try {
@@ -205,27 +207,27 @@ export default class Computation<T> extends Live<T> {
   }
 
   _addDependent(dependent: Live<unknown>): void {
-    const didListen = shouldListen(this);
+    const wasListening = shouldListen(this);
     super._addDependent(dependent);
-    updateDependencyListeners(this, didListen);
+    updateDependencyListeners(this, wasListening);
   }
 
   _removeDependent(dependent: Live<unknown>): void {
-    const didListen = shouldListen(this);
+    const wasListening = shouldListen(this);
     super._removeDependent(dependent);
-    updateDependencyListeners(this, didListen);
+    updateDependencyListeners(this, wasListening);
   }
 
   addListener(listener: () => void): void {
-    const didListen = shouldListen(this);
+    const wasListening = shouldListen(this);
     super.addListener(listener);
-    updateDependencyListeners(this, didListen);
+    updateDependencyListeners(this, wasListening);
   }
 
   removeListener(listener: () => void): void {
-    const didListen = shouldListen(this);
+    const wasListening = shouldListen(this);
     super.removeListener(listener);
-    updateDependencyListeners(this, didListen);
+    updateDependencyListeners(this, wasListening);
   }
 
   /**
@@ -288,6 +290,18 @@ export let currentComputationDependencies: Map<
 > | null = null;
 
 /**
+ * Let other modules in our package update `currentComputationDependencies`
+ * since ES Module exports aren’t writable.
+ *
+ * We trust callers to reset computation dependencies when they are done!
+ */
+export function setCurrentComputationDependencies(
+  nextComputationDependencies: Map<Live<unknown>, number> | null,
+) {
+  currentComputationDependencies = nextComputationDependencies;
+}
+
+/**
  * When we evaluate a computation we record which transaction it was evaluated
  * in. The next time we go to evaluate that computation if we are in the same
  * transaction then we know for certain the computation hasn’t changed.
@@ -295,7 +309,7 @@ export let currentComputationDependencies: Map<
  * The computation transaction represents some scope where all computations are
  * guaranteed to be immutable.
  */
-let currentComputationTransaction: number | null = null;
+export let currentComputationTransaction: number | null = null;
 
 let nextComputationTransaction = 1;
 
@@ -305,17 +319,17 @@ function shouldListen(computation: Computation<unknown>): boolean {
 
 function updateDependencyListeners(
   computation: Computation<unknown>,
-  didListen: boolean,
+  wasListening: boolean,
 ): void {
   const willListen = shouldListen(computation);
 
-  if (willListen === true && didListen === false) {
+  if (willListen === true && wasListening === false) {
     if (computation._dependencies !== null) {
       computation._dependencies.forEach((_version, dependency) => {
         dependency._addDependent(computation);
       });
     }
-  } else if (willListen === false && didListen === true) {
+  } else if (willListen === false && wasListening === true) {
     if (computation._dependencies !== null) {
       computation._dependencies.forEach((_version, dependency) => {
         dependency._removeDependent(computation);

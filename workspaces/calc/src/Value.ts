@@ -1,6 +1,6 @@
 import Live from './Live';
 import {currentComputationDependencies} from './Computation';
-import {objectIs} from './helpers/objectIs';
+import objectIs from './helpers/objectIs';
 
 export default class Value<T> extends Live<T> {
   _version: number = 0;
@@ -14,7 +14,7 @@ export default class Value<T> extends Live<T> {
   set(newValue: T): void {
     if (currentComputationDependencies !== null) {
       throw new Error(
-        'Can not call `value.set()` inside of a reactive context.',
+        'Can not call `value.set()` inside of a reactive context',
       );
     }
 
@@ -25,7 +25,7 @@ export default class Value<T> extends Live<T> {
     this._version++;
     this._value = newValue;
 
-    this._callListeners();
+    super._callListeners();
   }
 
   getWithoutListening(): T {
@@ -34,7 +34,7 @@ export default class Value<T> extends Live<T> {
 
   live(): T {
     if (currentComputationDependencies === null) {
-      throw new Error('Can only call `live()` inside of a reactive context.');
+      throw new Error('Can only call `live()` inside of a reactive context');
     }
 
     currentComputationDependencies.set(this, this._version);
@@ -44,5 +44,11 @@ export default class Value<T> extends Live<T> {
 
   _getLatestVersion(): number {
     return this._version;
+  }
+
+  // Called recursively in `Live` for dependents. Live values should not have
+  // any dependencies and so shouldn’t be a dependent of any `Live`.
+  _callListeners() {
+    throw new Error('`Live.Value` should not depend on anything');
   }
 }

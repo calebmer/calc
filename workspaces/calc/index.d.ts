@@ -7,6 +7,7 @@
 export default abstract class Live<T> {
   static Value: typeof Value;
   static Computation: typeof Computation;
+  static Subscription: typeof Subscription;
 
   live(): T;
 
@@ -27,4 +28,12 @@ declare class Value<T> extends Live<T> {
 
 declare class Computation<T> extends Live<T> {
   constructor(compute: () => T);
+}
+
+declare class Subscription<T> extends Live<T> {
+  constructor(subscription: {
+    get: () => T;
+    addListener: (listener: () => void) => void;
+    removeListener: (listener: () => void) => void;
+  });
 }

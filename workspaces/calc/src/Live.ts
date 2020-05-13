@@ -1,15 +1,20 @@
-import {scheduleException} from './helpers/scheduleException';
+import scheduleException from './helpers/scheduleException';
 
 /**
  * Some reactive value which may change over time. You may listen for changes
  * in the value. There are a few notable subclasses:
  *
- * - `LiveValue`: A live value is a reactive value with no dependencies that
+ * - `Value`: A live value is a reactive value with no dependencies that
  *   you may directly change. While `Live` is immutable a `Live.Value` allows
  *   you to introduce mutability into the system.
- * - `LiveComputation`: Some reactive value which is computed from other `Live`
+ *
+ * - `Computation`: Some reactive value which is computed from other `Live`
  *   dependencies. The computation will change when one of its `Live`
  *   dependencies change.
+ *
+ * - `Subscription`: Subscribes to a reactive value outside of our system.
+ *   Allows for us to integrate with event systems outside of our reactive
+ *   framework. For example, DOM or Backbone events.
  */
 export default abstract class Live<T> {
   /**

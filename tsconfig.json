@@ -1,13 +1,21 @@
 {
   "compilerOptions": {
+    // Output
     "noEmit": true,
+
+    // Compilation
     "target": "es2019",
+    "preserveConstEnums": false,
+    "useDefineForClassFields": true,
+
+    // Modules
     "module": "commonjs",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "isolatedModules": true,
-    "strict": true,
-    "useDefineForClassFields": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+
+    // Types
+    "strict": true
   }
 }

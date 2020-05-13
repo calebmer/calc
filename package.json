@@ -3,11 +3,14 @@
   "workspaces": [
     "workspaces/*"
   ],
+  "scripts": {
+    "test": "jest --watch"
+  },
   "dependencies": {
     "@types/jest": "^24.0.17",
     "jest": "^24.8.0",
     "prettier": "^1.19.1",
     "ts-jest": "^24.0.2",
-    "typescript": "^3.7.2"
+    "typescript": "^3.9.2"
   }
 }
